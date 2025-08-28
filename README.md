@@ -2,6 +2,19 @@
 
 Um dashboard interativo para análise de dados do projeto RM4Health, desenvolvido com Flask e integração com REDCap API.
 
+## ✅ VERSÃO FUNCIONANDO GARANTIDA! 🚀
+
+**Data**: 28 de Agosto de 2025  
+**Commit**: 3740954b87737a93e47aa0dcd6ed7add5fa1bc43  
+**Tag**: v2.0-FUNCIONANDO  
+**Branch**: versao-funcionando-garantida  
+
+**Status**: ✅ 100% FUNCIONANDO COM DADOS REAIS!
+- 🔗 API REDCap conectada: https://redcap.med.up.pt/redcap/api/
+- 📊 596 registros processados com sucesso
+- 🎯 Todos os dashboards operacionais
+- 🏥 Interface completa e responsiva
+
 ## 🎯 Funcionalidades
 
 ### Análises Disponíveis
