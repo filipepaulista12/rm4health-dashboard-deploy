@@ -1,0 +1,460 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RM4Health - Dashboard</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+    <style>
+        :root {
+            --primary-color: #2c5aa0;
+            --secondary-color: #48c9b0;
+            --success-color: #28a745;
+            --warning-color: #ffc107;
+            --danger-color: #dc3545;
+        }
+        
+        body {
+            background-color: #f8f9fa;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        .navbar {
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color)) !important;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        
+        .navbar-brand {
+            font-weight: bold;
+            font-size: 1.5rem;
+        }
+        
+        .stat-card {
+            border-left: 4px solid var(--primary-color);
+            transition: transform 0.2s, box-shadow 0.2s;
+            border-radius: 8px;
+            background: white;
+        }
+        
+        .stat-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+        
+        .stat-value {
+            font-size: 2rem;
+            font-weight: bold;
+            color: var(--primary-color);
+        }
+        
+        .stat-label {
+            color: #6c757d;
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        .chart-card {
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            transition: box-shadow 0.2s;
+        }
+        
+        .chart-card:hover {
+            box-shadow: 0 4px 16px rgba(0,0,0,0.15);
+        }
+        
+        .card-header {
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+            color: white;
+            border-radius: 8px 8px 0 0 !important;
+            font-weight: 500;
+        }
+        
+        .nav-pills .nav-link {
+            border-radius: 20px;
+            margin-right: 10px;
+        }
+        
+        .nav-pills .nav-link.active {
+            background-color: var(--primary-color);
+        }
+        
+        .status-indicator {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            display: inline-block;
+            margin-right: 8px;
+        }
+        
+        .status-online { background-color: var(--success-color); }
+        .status-offline { background-color: var(--danger-color); }
+        
+        .loading {
+            display: none;
+            text-align: center;
+            padding: 20px;
+        }
+        
+        .footer {
+            background: var(--primary-color);
+            color: white;
+            text-align: center;
+            padding: 20px;
+            margin-top: 40px;
+        }
+        
+        .alert-custom {
+            border-radius: 8px;
+            border: none;
+        }
+    </style>
+</head>
+<body>
+    <!-- Navbar -->
+    <nav class="navbar navbar-dark navbar-expand-lg">
+        <div class="container">
+            <a class="navbar-brand" href="/">
+                <i class="fas fa-heartbeat me-2"></i>
+                {{ stats.project_title or "RM4Health" }}
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav me-auto">
+                    <li class="nav-item">
+                        <a class="nav-link active" href="/">
+                            <i class="fas fa-tachometer-alt me-1"></i>Dashboard
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/participants">
+                            <i class="fas fa-users me-1"></i>Participantes
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/data-explorer">
+                            <i class="fas fa-search me-1"></i>Explorar Dados
+                        </a>
+                    </li>
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" id="analyticsDropdown" role="button" data-bs-toggle="dropdown">
+                            <i class="fas fa-chart-bar me-1"></i>Análises
+                        </a>
+                        <ul class="dropdown-menu">
+                            <li><a class="dropdown-item" href="/analytics">
+                                <i class="fas fa-chart-line me-2"></i>Visão Geral
+                            </a></li>
+                            <li><a class="dropdown-item" href="/instruments">
+                                <i class="fas fa-clipboard-list me-2"></i>Por Instrumentos
+                            </a></li>
+                            <li><a class="dropdown-item" href="/groups">
+                                <i class="fas fa-users me-2"></i>Por Grupos
+                            </a></li>
+                            <li><a class="dropdown-item" href="/patterns">
+                                <i class="fas fa-project-diagram me-2"></i>Padrões
+                            </a></li>
+                            <li><a class="dropdown-item" href="/longitudinal">
+                                <i class="fas fa-chart-line me-2"></i>Análise Longitudinal
+                            </a></li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li><a class="dropdown-item" href="/alerts">
+                                <i class="fas fa-exclamation-triangle me-2"></i>Alertas Clínicos
+                            </a></li>
+                            <li><a class="dropdown-item" href="/medication-adherence">
+                                <i class="fas fa-pills me-2"></i>Adesão Medicamentosa
+                            </a></li>
+                            <li><a class="dropdown-item" href="/sleep-analysis">
+                                <i class="fas fa-bed me-2"></i>Análise do Sono
+                            </a></li>
+                            <li><a class="dropdown-item" href="/healthcare-utilization">
+                                <i class="fas fa-hospital me-2"></i>Utilização de Serviços
+                            </a></li>
+                            <li><a class="dropdown-item" href="/caregivers">
+                                <i class="fas fa-hands-helping me-2"></i>Análise de Cuidadores
+                            </a></li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li><a class="dropdown-item" href="/data-quality">
+                                <i class="fas fa-chart-line me-2"></i>Qualidade dos Dados
+                            </a></li>
+                            <li><a class="dropdown-item" href="/residence-comparison">
+                                <i class="fas fa-home me-2"></i>Residentes vs Não-Residentes
+                            </a></li>
+                        </ul>
+                    </li>
+                </ul>
+                <span class="navbar-text">
+                    <span class="status-indicator {{ 'status-online' if success else 'status-offline' }}"></span>
+                    {{ 'Online' if success else 'Offline' }}
+                    {% if stats.last_update %}
+                        | Atualizado: {{ stats.last_update }}
+                    {% endif %}
+                </span>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container mt-4">
+        <!-- Status da Conexão -->
+        {% if not success %}
+        <div class="alert alert-warning alert-custom d-flex align-items-center" role="alert">
+            <i class="fas fa-exclamation-triangle me-2"></i>
+            <div>
+                <strong>Atenção!</strong> Não foi possível conectar à API do REDCap. 
+                Verifique sua conexão com a internet e as credenciais.
+                {% if stats.error %}
+                    <br><small>Erro: {{ stats.error }}</small>
+                {% endif %}
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Título e Subtítulo -->
+        <div class="row mb-4">
+            <div class="col-12 text-center">
+                <h1 class="display-4 mb-2">{{ stats.project_title or "RM4Health Dashboard" }}</h1>
+                <p class="lead text-muted">{{ stats.project_subtitle or "Sistema de Monitoramento Remoto de Saúde" }}</p>
+            </div>
+        </div>
+
+        <!-- Cards de Estatísticas -->
+        <div class="row mb-4">
+            <div class="col-xl-3 col-md-6 mb-3">
+                <div class="card stat-card h-100">
+                    <div class="card-body text-center">
+                        <div class="stat-value">
+                            <i class="fas fa-users text-primary me-2"></i>
+                            {{ stats.total_participants or 0 }}
+                        </div>
+                        <div class="stat-label mt-2">Participantes</div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-xl-3 col-md-6 mb-3">
+                <div class="card stat-card h-100">
+                    <div class="card-body text-center">
+                        <div class="stat-value">
+                            <i class="fas fa-file-alt text-success me-2"></i>
+                            {{ stats.total_records or 0 }}
+                        </div>
+                        <div class="stat-label mt-2">Registros</div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-xl-3 col-md-6 mb-3">
+                <div class="card stat-card h-100">
+                    <div class="card-body text-center">
+                        <div class="stat-value">
+                            <i class="fas fa-table text-info me-2"></i>
+                            {{ stats.total_variables or 0 }}
+                        </div>
+                        <div class="stat-label mt-2">Variáveis</div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-xl-3 col-md-6 mb-3">
+                <div class="card stat-card h-100">
+                    <div class="card-body text-center">
+                        <div class="stat-value">
+                            <i class="fas fa-percentage text-warning me-2"></i>
+                            {{ stats.completion_rate or 0 }}%
+                        </div>
+                        <div class="stat-label mt-2">Completude</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Gráficos -->
+        {% if success and charts %}
+        <div class="row">
+            <!-- Distribuição de Idade -->
+            {% if charts.age_distribution %}
+            <div class="col-lg-6 mb-4">
+                <div class="card chart-card">
+                    <div class="card-header">
+                        <h5 class="mb-0">
+                            <i class="fas fa-chart-bar me-2"></i>Distribuição de Idade
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div id="age-chart" class="chart-container"></div>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Distribuição de Gênero -->
+            {% if charts.gender_distribution %}
+            <div class="col-lg-6 mb-4">
+                <div class="card chart-card">
+                    <div class="card-header">
+                        <h5 class="mb-0">
+                            <i class="fas fa-chart-pie me-2"></i>Distribuição de Gênero
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div id="gender-chart" class="chart-container"></div>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Registros por Participante -->
+            {% if charts.records_per_participant %}
+            <div class="col-lg-6 mb-4">
+                <div class="card chart-card">
+                    <div class="card-header">
+                        <h5 class="mb-0">
+                            <i class="fas fa-chart-line me-2"></i>Registros por Participante
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div id="records-chart" class="chart-container"></div>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Completude por Instrumento -->
+            {% if charts.completion_by_instrument %}
+            <div class="col-lg-6 mb-4">
+                <div class="card chart-card">
+                    <div class="card-header">
+                        <h5 class="mb-0">
+                            <i class="fas fa-tasks me-2"></i>Completude por Instrumento
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div id="completion-chart" class="chart-container"></div>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+        {% endif %}
+
+        <!-- Ações Rápidas -->
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="mb-0">
+                            <i class="fas fa-bolt me-2"></i>Ações Rápidas
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-4 mb-2">
+                                <button class="btn btn-primary w-100" onclick="testConnection()">
+                                    <i class="fas fa-plug me-2"></i>Testar Conexão
+                                </button>
+                            </div>
+                            <div class="col-md-4 mb-2">
+                                <button class="btn btn-success w-100" onclick="refreshData()">
+                                    <i class="fas fa-sync me-2"></i>Atualizar Dados
+                                </button>
+                            </div>
+                            <div class="col-md-4 mb-2">
+                                <a href="/api/data" class="btn btn-info w-100" target="_blank">
+                                    <i class="fas fa-download me-2"></i>Exportar JSON
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Loading -->
+    <div class="loading" id="loading">
+        <div class="spinner-border text-primary" role="status">
+            <span class="visually-hidden">Carregando...</span>
+        </div>
+        <p class="mt-2">Processando...</p>
+    </div>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container">
+            <p class="mb-0">
+                <strong>RM4Health Dashboard</strong> - Faculdade de Medicina da Universidade do Porto
+            </p>
+            <small>Sistema de Monitoramento Remoto de Saúde | Desenvolvido em {{ "2025" }}</small>
+        </div>
+    </footer>
+
+    <!-- Scripts -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Renderizar gráficos
+        document.addEventListener('DOMContentLoaded', function() {
+            {% if charts.age_distribution %}
+            try {
+                const ageData = {{ charts.age_distribution|safe }};
+                Plotly.newPlot('age-chart', ageData.data, ageData.layout, {responsive: true});
+            } catch(e) { console.error('Erro no gráfico de idade:', e); }
+            {% endif %}
+
+            {% if charts.gender_distribution %}
+            try {
+                const genderData = {{ charts.gender_distribution|safe }};
+                Plotly.newPlot('gender-chart', genderData.data, genderData.layout, {responsive: true});
+            } catch(e) { console.error('Erro no gráfico de gênero:', e); }
+            {% endif %}
+
+            {% if charts.records_per_participant %}
+            try {
+                const recordsData = {{ charts.records_per_participant|safe }};
+                Plotly.newPlot('records-chart', recordsData.data, recordsData.layout, {responsive: true});
+            } catch(e) { console.error('Erro no gráfico de registros:', e); }
+            {% endif %}
+
+            {% if charts.completion_by_instrument %}
+            try {
+                const completionData = {{ charts.completion_by_instrument|safe }};
+                Plotly.newPlot('completion-chart', completionData.data, completionData.layout, {responsive: true});
+            } catch(e) { console.error('Erro no gráfico de completude:', e); }
+            {% endif %}
+        });
+
+        // Funções utilitárias
+        function showLoading() {
+            document.getElementById('loading').style.display = 'block';
+        }
+
+        function hideLoading() {
+            document.getElementById('loading').style.display = 'none';
+        }
+
+        function testConnection() {
+            showLoading();
+            fetch('/api/test-connection')
+                .then(response => response.json())
+                .then(data => {
+                    hideLoading();
+                    if (data.success) {
+                        alert('✅ Conexão testada com sucesso!');
+                    } else {
+                        alert('❌ Falha na conexão: ' + (data.error || 'Erro desconhecido'));
+                    }
+                })
+                .catch(error => {
+                    hideLoading();
+                    alert('❌ Erro ao testar conexão: ' + error.message);
+                });
+        }
+
+        function refreshData() {
+            showLoading();
+            location.reload();
+        }
+    </script>
+</body>
+</html>

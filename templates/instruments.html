@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Análise por Instrumentos - RM4Health Dashboard</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css" rel="stylesheet">
+    <script src="https://cdn.plot.ly/plotly-2.26.0.min.js"></script>
+</head>
+<body>
+    <!-- Navbar -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
+        <div class="container">
+            <a class="navbar-brand" href="{{ url_for('dashboard') }}">
+                <i class="bi bi-heart-pulse"></i> RM4Health Dashboard
+            </a>
+            <div class="navbar-nav ms-auto">
+                <a class="nav-link" href="{{ url_for('dashboard') }}"><i class="bi bi-house"></i> Dashboard</a>
+                <a class="nav-link" href="{{ url_for('participants') }}"><i class="bi bi-people"></i> Participantes</a>
+                <a class="nav-link" href="{{ url_for('data_explorer') }}"><i class="bi bi-table"></i> Explorador</a>
+                <a class="nav-link" href="{{ url_for('analytics') }}"><i class="bi bi-graph-up"></i> Análises</a>
+                <a class="nav-link active" href="{{ url_for('instruments') }}"><i class="bi bi-clipboard-data"></i> Instrumentos</a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container mt-4">
+        <div class="row">
+            <div class="col-12">
+                <h2><i class="bi bi-clipboard-data text-primary"></i> Análise por Instrumentos</h2>
+                <p class="text-muted">Análise detalhada dos formulários e questionários do estudo RM4Health</p>
+            </div>
+        </div>
+
+        {% if success and instruments %}
+        <!-- Resumo Geral -->
+        <div class="row mb-4">
+            <div class="col-md-3">
+                <div class="card bg-primary text-white">
+                    <div class="card-body text-center">
+                        <h3>{{ instruments|length }}</h3>
+                        <p class="mb-0">Instrumentos Ativos</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card bg-info text-white">
+                    <div class="card-body text-center">
+                        <h3>{{ instruments.values() | map(attribute='total_records') | sum }}</h3>
+                        <p class="mb-0">Total de Registros</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card bg-success text-white">
+                    <div class="card-body text-center">
+                        <h3>{{ instruments.values() | map(attribute='participants_list') | list | map('length') | sum if instruments else 0 }}</h3>
+                        <p class="mb-0">Total de Participações</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card bg-warning text-white">
+                    <div class="card-body text-center">
+                        <h3>{{ (instruments.values() | map(attribute='total_records') | sum) / instruments|length if instruments|length > 0 else 0 | round(1) }}</h3>
+                        <p class="mb-0">Média por Instrumento</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Gráfico de Distribuição -->
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="mb-0"><i class="bi bi-bar-chart"></i> Distribuição de Registros por Instrumento</h5>
+                    </div>
+                    <div class="card-body">
+                        <div id="instrumentsChart" style="height: 400px;"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Detalhes por Instrumento -->
+        {% for instrument_key, instrument_data in instruments.items() %}
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-header bg-light">
+                        <div class="row align-items-center">
+                            <div class="col-md-8">
+                                <h5 class="mb-0">
+                                    <i class="bi bi-clipboard-check text-primary"></i>
+                                    {{ instrument_data.name }}
+                                </h5>
+                            </div>
+                            <div class="col-md-4 text-end">
+                                <span class="badge bg-primary me-2">{{ instrument_data.total_records }} registros</span>
+                                <span class="badge bg-info">{{ instrument_data.unique_participants }} participantes</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <!-- Lista de Participantes -->
+                            <div class="col-md-6">
+                                <h6><i class="bi bi-people"></i> Participantes ({{ instrument_data.unique_participants }})</h6>
+                                <div class="border rounded p-2" style="max-height: 150px; overflow-y: auto;">
+                                    {% for participant in instrument_data.participants_list %}
+                                    <span class="badge bg-light text-dark me-1 mb-1">{{ participant }}</span>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                            
+                            <!-- Campos mais preenchidos -->
+                            <div class="col-md-6">
+                                <h6><i class="bi bi-check-square"></i> Campos Mais Preenchidos</h6>
+                                <div class="border rounded p-2" style="max-height: 150px; overflow-y: auto;">
+                                    {% for field, count in instrument_data.top_fields.items() %}
+                                    {% if loop.index <= 8 %}
+                                    <div class="d-flex justify-content-between align-items-center mb-1">
+                                        <small>{{ field[:30] }}{% if field|length > 30 %}...{% endif %}</small>
+                                        <span class="badge bg-secondary">{{ count }}</span>
+                                    </div>
+                                    {% endif %}
+                                    {% endfor %}
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Taxa de Preenchimento por Participante -->
+                        <div class="mt-3">
+                            <h6><i class="bi bi-graph-up"></i> Engajamento dos Participantes</h6>
+                            <div class="progress-stacked">
+                                {% set participation_rate = (instrument_data.unique_participants / 23 * 100) if 23 > 0 else 0 %}
+                                <div class="progress" style="height: 20px;">
+                                    <div class="progress-bar bg-success" 
+                                         style="width: {{ participation_rate }}%" 
+                                         title="Taxa de participação: {{ participation_rate|round(1) }}%">
+                                        {{ participation_rate|round(1) }}% dos participantes
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+
+        {% else %}
+        <!-- Estado de erro -->
+        <div class="row">
+            <div class="col-12">
+                <div class="alert alert-danger">
+                    <h5><i class="bi bi-exclamation-triangle"></i> Erro ao Carregar Instrumentos</h5>
+                    {% if error %}
+                    <p><strong>Erro:</strong> {{ error }}</p>
+                    {% else %}
+                    <p>Não foi possível carregar os dados dos instrumentos.</p>
+                    {% endif %}
+                    <a href="{{ url_for('dashboard') }}" class="btn btn-primary">
+                        <i class="bi bi-house"></i> Voltar ao Dashboard
+                    </a>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- Scripts -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    
+    {% if success and instruments %}
+    <script>
+        // Gráfico de distribuição de instrumentos
+        const instrumentsData = [
+            {
+                x: [{% for instrument_key, instrument_data in instruments.items() %}'{{ instrument_data.name }}'{% if not loop.last %},{% endif %}{% endfor %}],
+                y: [{% for instrument_key, instrument_data in instruments.items() %}{{ instrument_data.total_records }}{% if not loop.last %},{% endif %}{% endfor %}],
+                type: 'bar',
+                marker: {
+                    color: ['#0d6efd', '#198754', '#ffc107', '#dc3545', '#6f42c1', '#fd7e14']
+                }
+            }
+        ];
+
+        const layout = {
+            title: false,
+            xaxis: { 
+                title: 'Instrumentos',
+                tickangle: -45
+            },
+            yaxis: { title: 'Número de Registros' },
+            margin: { t: 20, b: 100, l: 60, r: 20 }
+        };
+
+        Plotly.newPlot('instrumentsChart', instrumentsData, layout, {responsive: true});
+    </script>
+    {% endif %}
+</body>
+</html>

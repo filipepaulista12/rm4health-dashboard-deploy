@@ -1,0 +1,885 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🏥 Utilização de Serviços - RM4Health</title>
+    
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    
+    <!-- Plotly.js -->
+    <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+    
+    <style>
+        .utilization-card {
+            background: linear-gradient(135deg, #4ECDC4 0%, #44A08D 100%);
+            color: white;
+            border-radius: 15px;
+            box-shadow: 0 8px 32px rgba(31, 38, 135, 0.37);
+            backdrop-filter: blur(8.5px);
+            border: 1px solid rgba(255, 255, 255, 0.18);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+        
+        .utilization-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 15px 35px rgba(31, 38, 135, 0.4);
+        }
+        
+        .cost-effective { 
+            background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%); 
+        }
+        .cost-neutral { 
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); 
+        }
+        .cost-high { 
+            background: linear-gradient(135deg, #fc466b 0%, #3f5efb 100%); 
+        }
+        
+        .service-card {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 15px;
+            padding: 20px;
+            margin: 10px 0;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            transition: all 0.3s ease;
+            border-left: 5px solid #4ECDC4;
+        }
+        
+        .service-card:hover {
+            transform: scale(1.02);
+            box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+        }
+        
+        .impact-item {
+            background: linear-gradient(90deg, rgba(78, 205, 196, 0.1) 0%, rgba(68, 160, 141, 0.05) 100%);
+            border-left: 4px solid #44A08D;
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 8px;
+        }
+        
+        .predictor-badge {
+            font-size: 0.9em;
+            padding: 8px 12px;
+            border-radius: 20px;
+            font-weight: bold;
+            margin: 5px;
+            display: inline-block;
+        }
+        
+        .chart-container {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 15px;
+            padding: 20px;
+            margin: 20px 0;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        
+        .utilization-metrics {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin: 20px 0;
+        }
+        
+        .metric-item {
+            text-align: center;
+            padding: 15px;
+            background: rgba(255, 255, 255, 0.9);
+            border-radius: 10px;
+            box-shadow: 0 3px 10px rgba(0,0,0,0.1);
+        }
+        
+        .roi-positive {
+            color: #28a745;
+            font-weight: bold;
+        }
+        
+        .roi-negative {
+            color: #dc3545;
+            font-weight: bold;
+        }
+        
+        .efficiency-mode {
+            background: linear-gradient(135deg, #00b4db 0%, #0083b0 100%);
+            color: #fff;
+        }
+    </style>
+</head>
+<body style="background: linear-gradient(135deg, #4ECDC4 0%, #44A08D 100%); min-height: 100vh;">
+    
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+        <div class="container">
+            <a class="navbar-brand" href="/">
+                <i class="fas fa-chart-line"></i> RM4Health Analytics
+            </a>
+            <div class="navbar-nav ms-auto">
+                <a class="nav-link" href="/">
+                    <i class="fas fa-home"></i> Dashboard
+                </a>
+                <a class="nav-link" href="/longitudinal">
+                    <i class="fas fa-chart-line"></i> Análise Longitudinal
+                </a>
+                <a class="nav-link" href="/alerts">
+                    <i class="fas fa-exclamation-triangle"></i> Alertas Clínicos
+                </a>
+                <a class="nav-link" href="/medication-adherence">
+                    <i class="fas fa-pills"></i> Adesão Medicamentosa
+                </a>
+                <a class="nav-link" href="/sleep-analysis">
+                    <i class="fas fa-bed"></i> Análise do Sono
+                </a>
+                <a class="nav-link active">
+                    <i class="fas fa-hospital"></i> Utilização de Serviços
+                </a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container mt-4">
+        
+        <!-- Header -->
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="card bg-dark text-white">
+                    <div class="card-body text-center">
+                        <h1><i class="fas fa-hospital"></i> Análise de Utilização de Serviços de Saúde</h1>
+                        <p class="lead">Avaliação de padrões, custos e efetividade do monitoramento remoto - RM4Health</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        {% if not success %}
+        <div class="row">
+            <div class="col-12">
+                <div class="alert alert-danger">
+                    <h4><i class="fas fa-exclamation-triangle"></i> Erro na Análise</h4>
+                    <p>{{ error }}</p>
+                </div>
+            </div>
+        </div>
+        {% else %}
+
+        <!-- Métricas Principais de Utilização -->
+        <div class="row mb-4">
+            <div class="col-md-3">
+                <div class="card utilization-card cost-effective">
+                    <div class="card-body text-center">
+                        <i class="fas fa-euro-sign fa-2x mb-2"></i>
+                        <h3>€{{ costs.cost_summary.total_cost_savings or 0 }}</h3>
+                        <p>Poupanças Totais</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card utilization-card">
+                    <div class="card-body text-center">
+                        <i class="fas fa-percentage fa-2x mb-2"></i>
+                        <h3>{{ costs.cost_summary.roi_percentage or 0 }}%</h3>
+                        <p>ROI do Monitoramento</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card utilization-card">
+                    <div class="card-body text-center">
+                        <i class="fas fa-chart-bar fa-2x mb-2"></i>
+                        <h3>{{ patterns.summary.average_utilization_rate or 0 }}%</h3>
+                        <p>Taxa Média de Utilização</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card utilization-card">
+                    <div class="card-body text-center">
+                        <i class="fas fa-users fa-2x mb-2"></i>
+                        <h3>{{ patterns.summary.total_participants or 0 }}</h3>
+                        <p>Participantes Analisados</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Abas de Análise -->
+        <div class="row">
+            <div class="col-12">
+                <ul class="nav nav-tabs" id="utilizationTab" role="tablist">
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link active" id="services-tab" data-bs-toggle="tab" data-bs-target="#services" type="button">
+                            <i class="fas fa-hospital-alt"></i> Padrões de Utilização
+                        </button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="costs-tab" data-bs-toggle="tab" data-bs-target="#costs" type="button">
+                            <i class="fas fa-calculator"></i> Análise de Custos
+                        </button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="impact-tab" data-bs-toggle="tab" data-bs-target="#impact" type="button">
+                            <i class="fas fa-chart-line"></i> Impacto do Monitoramento
+                        </button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="predictors-tab" data-bs-toggle="tab" data-bs-target="#predictors" type="button">
+                            <i class="fas fa-search"></i> Preditores de Utilização
+                        </button>
+                    </li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- Conteúdo das Abas -->
+        <div class="tab-content" id="utilizationTabContent">
+            
+            <!-- ABA 1: Padrões de Utilização de Serviços -->
+            <div class="tab-pane fade show active" id="services" role="tabpanel">
+                <div class="row mt-4">
+                    
+                    <!-- Distribuição por Tipo de Serviço -->
+                    <div class="col-lg-8">
+                        <div class="card">
+                            <div class="card-header">
+                                <h5><i class="fas fa-chart-bar"></i> Utilização por Tipo de Serviço</h5>
+                            </div>
+                            <div class="card-body">
+                                <div id="serviceUtilizationChart"></div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Intensidade de Utilização -->
+                    <div class="col-lg-4">
+                        <div class="card">
+                            <div class="card-header">
+                                <h5><i class="fas fa-pie-chart"></i> Intensidade de Utilização</h5>
+                            </div>
+                            <div class="card-body">
+                                <div id="utilizationIntensityChart"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Detalhes dos Serviços -->
+                <div class="row mt-4">
+                    <div class="col-12">
+                        <div class="card">
+                            <div class="card-header">
+                                <h5><i class="fas fa-list-alt"></i> Detalhes por Tipo de Serviço</h5>
+                            </div>
+                            <div class="card-body">
+                                <div class="row">
+                                    {% for service_key, service_data in patterns.service_utilization.items() %}
+                                    <div class="col-lg-6 col-xl-4">
+                                        <div class="service-card">
+                                            <h6><i class="fas fa-stethoscope"></i> {{ service_data.name }}</h6>
+                                            
+                                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                                <span class="badge 
+                                                    {% if service_data.utilization_rate >= 50 %}bg-success
+                                                    {% elif service_data.utilization_rate >= 25 %}bg-warning
+                                                    {% else %}bg-secondary{% endif %}">
+                                                    {{ service_data.utilization_rate }}% utilização
+                                                </span>
+                                                <small class="text-muted">{{ service_data.participants_using }} participantes</small>
+                                            </div>
+                                            
+                                            {% if service_data.frequency_distribution %}
+                                            <div class="mt-2">
+                                                <small><strong>Distribuição de Frequência:</strong></small>
+                                                {% for freq_value, count in service_data.frequency_distribution.items() %}
+                                                <div class="d-flex justify-content-between">
+                                                    <small>{{ freq_value }}</small>
+                                                    <small>{{ count }} participantes</small>
+                                                </div>
+                                                {% endfor %}
+                                            </div>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ABA 2: Análise de Custos -->
+            <div class="tab-pane fade" id="costs" role="tabpanel">
+                <div class="row mt-4">
+                    
+                    <!-- Comparação de Custos -->
+                    <div class="col-lg-8">
+                        <div class="card">
+                            <div class="card-header">
+                                <h5><i class="fas fa-balance-scale"></i> Comparação de Custos: Tradicional vs Monitoramento Remoto</h5>
+                            </div>
+                            <div class="card-body">
+                                <div id="costComparisonChart"></div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- ROI e Métricas de Efetividade -->
+                    <div class="col-lg-4">
+                        <div class="card">
+                            <div class="card-header">
+                                <h5><i class="fas fa-chart-line"></i> ROI e Efetividade</h5>
+                            </div>
+                            <div class="card-body">
+                                <div class="utilization-metrics">
+                                    <div class="metric-item">
+                                        <h4 class="{{ 'roi-positive' if costs.cost_summary.roi_percentage > 0 else 'roi-negative' }}">
+                                            {{ costs.cost_summary.roi_percentage or 0 }}%
+                                        </h4>
+                                        <small>ROI do Projeto</small>
+                                    </div>
+                                    <div class="metric-item">
+                                        <h4>€{{ costs.cost_summary.average_savings_per_participant or 0 }}</h4>
+                                        <small>Poupança por Participante</small>
+                                    </div>
+                                </div>
+                                
+                                <!-- Métricas de Efetividade -->
+                                <div class="mt-3">
+                                    <h6>Métricas de Efetividade:</h6>
+                                    <div class="d-flex justify-content-between">
+                                        <small>Redução Urgências:</small>
+                                        <strong>{{ costs.effectiveness_metrics.reduced_emergency_visits or 0 }}%</strong>
+                                    </div>
+                                    <div class="d-flex justify-content-between">
+                                        <small>Melhoria Adesão:</small>
+                                        <strong>{{ costs.effectiveness_metrics.improved_treatment_adherence or 0 }}%</strong>
+                                    </div>
+                                    <div class="d-flex justify-content-between">
+                                        <small>Detecção Precoce:</small>
+                                        <strong>{{ costs.effectiveness_metrics.early_detection_rate or 0 }}%</strong>
+                                    </div>
+                                    <div class="d-flex justify-content-between">
+                                        <small>Satisfação:</small>
+                                        <strong>{{ costs.effectiveness_metrics.patient_satisfaction or 0 }}/5</strong>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Breakdown de Custos -->
+                <div class="row mt-4">
+                    <div class="col-lg-6">
+                        <div class="card">
+                            <div class="card-header">
+                                <h5><i class="fas fa-euro-sign"></i> Breakdown de Custos por Serviço</h5>
+                            </div>
+                            <div class="card-body">
+                                <div id="costBreakdownChart"></div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="col-lg-6">
+                        <div class="card">
+                            <div class="card-header">
+                                <h5><i class="fas fa-piggy-bank"></i> Análise de Poupanças</h5>
+                            </div>
+                            <div class="card-body">
+                                <div id="savingsAnalysisChart"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ABA 3: Impacto do Monitoramento Remoto -->
+            <div class="tab-pane fade" id="impact" role="tabpanel">
+                <div class="row mt-4">
+                    
+                    <!-- Evolução dos Indicadores -->
+                    <div class="col-lg-8">
+                        <div class="card">
+                            <div class="card-header">
+                                <h5><i class="fas fa-chart-area"></i> Evolução dos Indicadores Pré/Pós Monitoramento</h5>
+                            </div>
+                            <div class="card-body">
+                                <div id="impactEvolutionChart"></div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Resumo do Impacto -->
+                    <div class="col-lg-4">
+                        <div class="card">
+                            <div class="card-header">
+                                <h5><i class="fas fa-info-circle"></i> Resumo do Impacto</h5>
+                            </div>
+                            <div class="card-body">
+                                <ul class="list-group list-group-flush">
+                                    <li class="list-group-item d-flex justify-content-between">
+                                        <span>Total de Participantes:</span>
+                                        <strong>{{ remote_impact.summary.total_participants or 0 }}</strong>
+                                    </li>
+                                    <li class="list-group-item d-flex justify-content-between">
+                                        <span>Impacto Geral:</span>
+                                        <strong class="{{ 'text-success' if remote_impact.summary.overall_impact_positive else 'text-warning' }}">
+                                            {{ 'Positivo' if remote_impact.summary.overall_impact_positive else 'Neutro' }}
+                                        </strong>
+                                    </li>
+                                    <li class="list-group-item d-flex justify-content-between">
+                                        <span>Melhoria Média:</span>
+                                        <strong>{{ remote_impact.summary.average_improvement or 0 }}%</strong>
+                                    </li>
+                                    <li class="list-group-item d-flex justify-content-between">
+                                        <span>Melhor Métrica:</span>
+                                        <strong>{{ remote_impact.summary.most_improved_metric or 'N/A' }}</strong>
+                                    </li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Análise Detalhada do Impacto -->
+                <div class="row mt-4">
+                    <div class="col-12">
+                        <div class="card">
+                            <div class="card-header">
+                                <h5><i class="fas fa-search"></i> Análise Detalhada do Impacto</h5>
+                            </div>
+                            <div class="card-body">
+                                {% for impact_key, impact_data in remote_impact.impact_analysis.items() %}
+                                <div class="impact-item">
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <div>
+                                            <strong>{{ impact_data.name }}</strong>
+                                            <br>
+                                            <small class="text-muted">
+                                                Baseline: {{ impact_data.baseline_value }} → 
+                                                Monitoramento: {{ impact_data.monitoring_value }}
+                                            </small>
+                                        </div>
+                                        <div class="text-end">
+                                            <span class="badge 
+                                                {% if impact_data.percentage_change > 0 %}bg-success
+                                                {% elif impact_data.percentage_change < 0 %}bg-danger
+                                                {% else %}bg-secondary{% endif %}">
+                                                {{ impact_data.percentage_change }}%
+                                            </span>
+                                            <br>
+                                            <small>{{ 'Melhoria' if impact_data.improvement else 'Sem alteração' }}</small>
+                                        </div>
+                                    </div>
+                                </div>
+                                {% endfor %}
+                                
+                                <!-- Métricas de Alertas -->
+                                {% if remote_impact.alert_impact %}
+                                <div class="mt-4">
+                                    <h6><i class="fas fa-bell"></i> Efetividade dos Alertas:</h6>
+                                    <div class="row">
+                                        <div class="col-md-3">
+                                            <div class="metric-item">
+                                                <h5>{{ remote_impact.alert_impact.total_alerts or 0 }}</h5>
+                                                <small>Total de Alertas</small>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-3">
+                                            <div class="metric-item">
+                                                <h5>{{ remote_impact.alert_impact.intervention_success_rate or 0 }}%</h5>
+                                                <small>Taxa de Sucesso</small>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-3">
+                                            <div class="metric-item">
+                                                <h5>{{ remote_impact.alert_impact.response_time_avg or 0 }}h</h5>
+                                                <small>Tempo de Resposta</small>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-3">
+                                            <div class="metric-item">
+                                                <h5>{{ remote_impact.alert_impact.true_positives or 0 }}</h5>
+                                                <small>Verdadeiros Positivos</small>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ABA 4: Preditores de Alta Utilização -->
+            <div class="tab-pane fade" id="predictors" role="tabpanel">
+                <div class="row mt-4">
+                    
+                    <!-- Modelo Preditivo -->
+                    <div class="col-lg-8">
+                        <div class="card">
+                            <div class="card-header">
+                                <h5><i class="fas fa-brain"></i> Modelo Preditivo de Utilização</h5>
+                            </div>
+                            <div class="card-body">
+                                <div id="predictorsChart"></div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Performance do Modelo -->
+                    <div class="col-lg-4">
+                        <div class="card">
+                            <div class="card-header">
+                                <h5><i class="fas fa-chart-pie"></i> Performance do Modelo</h5>
+                            </div>
+                            <div class="card-body">
+                                {% if predictors.get('utilization_analysis') %}
+                                <div class="utilization-metrics">
+                                    <div class="metric-item">
+                                        <h4>{{ predictors.utilization_analysis.get('total_participants', 0) }}</h4>
+                                        <small>Total Participantes</small>
+                                    </div>
+                                    <div class="metric-item">
+                                        <h4>{{ predictors.utilization_analysis.get('high_utilizers_count', 0) }}</h4>
+                                        <small>Alta Utilização</small>
+                                    </div>
+                                    <div class="metric-item">
+                                        <h4>{{ predictors.utilization_analysis.get('high_utilization_rate', 0) }}%</h4>
+                                        <small>Taxa de Alta Utilização</small>
+                                    </div>
+                                    <div class="metric-item">
+                                        <h4>{{ predictors.utilization_analysis.get('average_services_per_participant', 0) }}</h4>
+                                        <small>Serviços por Participante</small>
+                                    </div>
+                                </div>
+                                
+                                <div class="mt-3">
+                                    {% if predictors.get('data_summary', {}).get('available_data_fields') %}
+                                    <h6>Dados Disponíveis para Análise:</h6>
+                                    {% for field in predictors.data_summary.available_data_fields[:5] %}
+                                    <span class="predictor-badge bg-primary text-white">{{ field|replace('_', ' ')|title }}</span>
+                                    {% endfor %}
+                                    {% endif %}
+                                </div>
+                                {% else %}
+                                <div class="alert alert-info">
+                                    <i class="fas fa-info-circle"></i>
+                                    Análise de utilização não disponível ou em processamento.
+                                </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Análise de Preditores por Categoria -->
+                <div class="row mt-4">
+                    <div class="col-12">
+                        <div class="card">
+                            <div class="card-header">
+                                <h5><i class="fas fa-layer-group"></i> Preditores por Categoria (Dados Reais)</h5>
+                            </div>
+                            <div class="card-body">
+                                <div class="alert alert-info">
+                                    <strong>Análise baseada exclusivamente em dados reais do REDCap - Sem simulações</strong>
+                                </div>
+                                
+                                <div class="row">
+                                    {% if predictors and predictors.get('predictor_analysis') %}
+                                    {% for category, category_data in predictors.predictor_analysis.items() %}
+                                    <div class="col-lg-6 col-xl-3">
+                                        <div class="card bg-light mb-3">
+                                            <div class="card-body text-center">
+                                                <h6 class="text-capitalize text-primary">
+                                                    <i class="fas fa-tag"></i> {{ category|replace('_', ' ')|title }}
+                                                </h6>
+                                                <h4 class="text-success">{{ category_data.get('available_predictors', 0) }}</h4>
+                                                <small class="text-muted">Preditores Disponíveis</small>
+                                                <br>
+                                                <span class="badge bg-info mt-2">
+                                                    {{ category_data.get('data_quality', 'N/A') }}
+                                                </span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    {% endfor %}
+                                    {% else %}
+                                    <div class="col-12">
+                                        <div class="alert alert-warning">
+                                            <i class="fas fa-exclamation-triangle"></i>
+                                            Dados de preditores não disponíveis ou em processamento.
+                                        </div>
+                                    </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Participantes com Alta Utilização -->
+                <div class="row mt-4">
+                    <div class="col-12">
+                        <div class="card">
+                            <div class="card-header">
+                                <h5><i class="fas fa-chart-line"></i> Participantes com Alta Utilização de Serviços</h5>
+                            </div>
+                            <div class="card-body">
+                                {% if predictors.get('high_utilizers') and predictors.high_utilizers|length > 0 %}
+                                <div class="row">
+                                    {% for participant_id in predictors.high_utilizers[:6] %}
+                                    <div class="col-md-6 col-lg-4">
+                                        <div class="service-card">
+                                            <h6>Participante {{ participant_id }}</h6>
+                                            <div class="d-flex justify-content-between align-items-center">
+                                                <span class="badge bg-warning">Alto Utilizador</span>
+                                                <strong><i class="fas fa-user-md"></i></strong>
+                                            </div>
+                                            <small class="text-muted mt-2 d-block">
+                                                Utilizador frequente de serviços de saúde
+                                            </small>
+                                        </div>
+                                    </div>
+                                    {% endfor %}
+                                </div>
+                                {% else %}
+                                <div class="alert alert-info">
+                                    <i class="fas fa-info-circle"></i>
+                                    Dados de alta utilização não disponíveis ou ainda em processamento.
+                                </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        {% endif %}
+        
+    </div>
+
+    <!-- Scripts -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <script>
+        // Dados do backend
+        const patterns = {{ patterns|tojson }};
+        const costs = {{ costs|tojson }};
+        const remoteImpact = {{ remote_impact|tojson }};
+        const predictors = {{ predictors|tojson }};
+        
+        // 1. Gráfico de Utilização por Tipo de Serviço
+        if (patterns && patterns.service_utilization) {
+            const serviceNames = [];
+            const utilizationRates = [];
+            const participantCounts = [];
+            
+            for (const [serviceKey, serviceData] of Object.entries(patterns.service_utilization)) {
+                serviceNames.push(serviceData.name || serviceKey);
+                utilizationRates.push(serviceData.utilization_rate || 0);
+                participantCounts.push(serviceData.participants_using || 0);
+            }
+            
+            const serviceData = [
+                {
+                    x: serviceNames,
+                    y: utilizationRates,
+                    type: 'bar',
+                    name: 'Taxa de Utilização (%)',
+                    yaxis: 'y',
+                    marker: { color: 'rgba(78, 205, 196, 0.8)' }
+                },
+                {
+                    x: serviceNames,
+                    y: participantCounts,
+                    type: 'scatter',
+                    mode: 'lines+markers',
+                    name: 'Participantes',
+                    yaxis: 'y2',
+                    line: { color: 'rgba(68, 160, 141, 1)', width: 3 },
+                    marker: { size: 8, color: 'rgba(68, 160, 141, 1)' }
+                }
+            ];
+            
+            const serviceLayout = {
+                title: 'Utilização de Serviços de Saúde',
+                xaxis: { title: 'Tipo de Serviço', tickangle: -45 },
+                yaxis: { title: 'Taxa de Utilização (%)', side: 'left' },
+                yaxis2: { title: 'Número de Participantes', side: 'right', overlaying: 'y' },
+                plot_bgcolor: 'rgba(0,0,0,0)',
+                paper_bgcolor: 'rgba(0,0,0,0)'
+            };
+            
+            Plotly.newPlot('serviceUtilizationChart', serviceData, serviceLayout, {responsive: true});
+        }
+        
+        // 2. Gráfico de Intensidade de Utilização
+        if (patterns && patterns.intensity_classification) {
+            const intensityLabels = Object.keys(patterns.intensity_classification);
+            const intensityValues = Object.values(patterns.intensity_classification);
+            const intensityColors = ['#28a745', '#ffc107', '#fd7e14', '#dc3545'];
+            
+            const intensityData = [{
+                values: intensityValues,
+                labels: intensityLabels.map(label => label.replace('_intensity', '').replace('_', ' ')),
+                type: 'pie',
+                hole: 0.4,
+                marker: { colors: intensityColors }
+            }];
+            
+            const intensityLayout = {
+                title: 'Distribuição por Intensidade',
+                showlegend: true,
+                plot_bgcolor: 'rgba(0,0,0,0)',
+                paper_bgcolor: 'rgba(0,0,0,0)'
+            };
+            
+            Plotly.newPlot('utilizationIntensityChart', intensityData, intensityLayout, {responsive: true});
+        }
+        
+        // 3. Comparação de Custos
+        if (costs && costs.cost_summary) {
+            const costData = [{
+                x: ['Cuidados Tradicionais', 'Monitoramento Remoto'],
+                y: [costs.cost_summary.total_traditional_costs || 0, costs.cost_summary.total_remote_monitoring_costs || 0],
+                type: 'bar',
+                marker: {
+                    color: ['rgba(220, 53, 69, 0.8)', 'rgba(40, 167, 69, 0.8)']
+                }
+            }];
+            
+            const costLayout = {
+                title: 'Comparação de Custos Totais (€)',
+                yaxis: { title: 'Custo (€)' },
+                plot_bgcolor: 'rgba(0,0,0,0)',
+                paper_bgcolor: 'rgba(0,0,0,0)'
+            };
+            
+            Plotly.newPlot('costComparisonChart', costData, costLayout, {responsive: true});
+        }
+        
+        // 4. Breakdown de Custos
+        if (costs && costs.cost_breakdown) {
+            const costLabels = Object.keys(costs.cost_breakdown);
+            const costValues = Object.values(costs.cost_breakdown);
+            
+            const breakdownData = [{
+                values: costValues,
+                labels: costLabels.map(label => label.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())),
+                type: 'pie',
+                textinfo: 'label+percent+value',
+                texttemplate: '%{label}<br>€%{value}<br>%{percent}'
+            }];
+            
+            const breakdownLayout = {
+                title: 'Breakdown de Custos por Tipo',
+                showlegend: false,
+                plot_bgcolor: 'rgba(0,0,0,0)',
+                paper_bgcolor: 'rgba(0,0,0,0)'
+            };
+            
+            Plotly.newPlot('costBreakdownChart', breakdownData, breakdownLayout, {responsive: true});
+        }
+        
+        // 5. Análise de Poupanças
+        if (costs && costs.participant_costs) {
+            const participantIds = Object.keys(costs.participant_costs);
+            const savings = participantIds.map(id => costs.participant_costs[id].cost_savings || 0);
+            
+            const savingsData = [{
+                x: participantIds,
+                y: savings,
+                type: 'bar',
+                marker: {
+                    color: savings.map(s => s > 0 ? 'rgba(40, 167, 69, 0.8)' : 'rgba(220, 53, 69, 0.8)')
+                }
+            }];
+            
+            const savingsLayout = {
+                title: 'Poupanças por Participante (€)',
+                xaxis: { title: 'Participante' },
+                yaxis: { title: 'Poupança (€)' },
+                plot_bgcolor: 'rgba(0,0,0,0)',
+                paper_bgcolor: 'rgba(0,0,0,0)'
+            };
+            
+            Plotly.newPlot('savingsAnalysisChart', savingsData, savingsLayout, {responsive: true});
+        }
+        
+        // 6. Evolução dos Indicadores de Impacto
+        if (remoteImpact && remoteImpact.impact_analysis) {
+            const indicators = Object.keys(remoteImpact.impact_analysis);
+            const baselineValues = indicators.map(key => remoteImpact.impact_analysis[key].baseline_value || 0);
+            const monitoringValues = indicators.map(key => remoteImpact.impact_analysis[key].monitoring_value || 0);
+            
+            const impactData = [
+                {
+                    x: indicators.map(ind => ind.replace(/_/g, ' ')),
+                    y: baselineValues,
+                    type: 'bar',
+                    name: 'Período Baseline',
+                    marker: { color: 'rgba(255, 193, 7, 0.8)' }
+                },
+                {
+                    x: indicators.map(ind => ind.replace(/_/g, ' ')),
+                    y: monitoringValues,
+                    type: 'bar',
+                    name: 'Período Monitoramento',
+                    marker: { color: 'rgba(78, 205, 196, 0.8)' }
+                }
+            ];
+            
+            const impactLayout = {
+                title: 'Evolução dos Indicadores Pré/Pós Monitoramento',
+                xaxis: { title: 'Indicador', tickangle: -45 },
+                yaxis: { title: 'Valor do Indicador' },
+                barmode: 'group',
+                plot_bgcolor: 'rgba(0,0,0,0)',
+                paper_bgcolor: 'rgba(0,0,0,0)'
+            };
+            
+            Plotly.newPlot('impactEvolutionChart', impactData, impactLayout, {responsive: true});
+        }
+        
+        // 7. Gráfico de Preditores
+        if (predictors && predictors.predictor_analysis) {
+            const categories = Object.keys(predictors.predictor_analysis);
+            const predictorCounts = categories.map(cat => {
+                const categoryData = predictors.predictor_analysis[cat];
+                return categoryData.available_predictors || 0;
+            });
+            
+            const predictorsData = [{
+                x: categories.map(cat => cat.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())),
+                y: predictorCounts,
+                type: 'bar',
+                name: 'Preditores Disponíveis',
+                marker: {
+                    color: 'rgba(0, 180, 219, 0.8)'
+                }
+            }];
+            
+            const predictorsLayout = {
+                title: 'Força Preditiva por Categoria',
+                xaxis: { title: 'Categoria de Preditores' },
+                yaxis: { title: 'Correlação Média', range: [0, 1] },
+                plot_bgcolor: 'rgba(0,0,0,0)',
+                paper_bgcolor: 'rgba(0,0,0,0)'
+            };
+            
+            Plotly.newPlot('predictorsChart', predictorsData, predictorsLayout, {responsive: true});
+        }
+        
+        // Auto-refresh opcional
+        // setInterval(() => location.reload(), 300000); // 5 minutos
+    </script>
+
+</body>
+</html>
