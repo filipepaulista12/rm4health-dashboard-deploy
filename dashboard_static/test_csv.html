@@ -1,0 +1,174 @@
+﻿<!DOCTYPE html>
+<html lang="pt">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Teste Carregamento CSV - RM4Health</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body>
+    <div class="container mt-5">
+        <h1> Teste de Carregamento CSV</h1>
+        <p class="lead">Este é um teste rápido para verificar se o CSV está sendo carregado corretamente.</p>
+        
+        <div id="results" class="mt-4">
+            <div class="spinner-border text-primary" role="status">
+                <span class="visually-hidden">Testando...</span>
+            </div>
+            <p class="mt-2">Testando carregamento...</p>
+        </div>
+    </div>
+
+    <!-- Scripts necessários -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+    
+    <script>
+        async function testCSVLoad() {
+            const resultsDiv = document.getElementById('results');
+            
+            try {
+                console.log(' Testing CSV load...');
+                
+                // Testar múltiplos caminhos
+                const paths = [
+                    'data/rm4health_dados_reais.csv',
+                    './data/rm4health_dados_reais.csv',
+                    'dashboard_static/data/rm4health_dados_reais.csv'
+                ];
+                
+                let success = false;
+                let csvData = null;
+                let successPath = null;
+                
+                for (const path of paths) {
+                    try {
+                        console.log(` Trying path: ${path}`);
+                        const response = await fetch(path);
+                        
+                        if (response.ok) {
+                            const csvText = await response.text();
+                            if (csvText && csvText.trim().length > 0) {
+                                csvData = csvText;
+                                successPath = path;
+                                success = true;
+                                break;
+                            }
+                        }
+                    } catch (e) {
+                        console.warn(` Failed: ${path} - ${e.message}`);
+                    }
+                }
+                
+                if (!success) {
+                    throw new Error('Nenhum caminho funcionou');
+                }
+                
+                console.log(` CSV loaded from: ${successPath}`);
+                console.log(` Size: ${csvData.length} characters`);
+                
+                // Parse com Papa Parse
+                Papa.parse(csvData, {
+                    header: true,
+                    skipEmptyLines: true,
+                    complete: function(results) {
+                        console.log(' Parse results:', results.meta);
+                        console.log(' Total rows:', results.data.length);
+                        console.log(' Sample row:', results.data[0]);
+                        
+                        const validRows = results.data.filter(row => {
+                            return row && Object.values(row).some(value => 
+                                value !== undefined && 
+                                value !== null && 
+                                value.toString().trim() !== ''
+                            );
+                        });
+                        
+                        resultsDiv.innerHTML = `
+                            <div class="alert alert-success">
+                                <h4> CSV Carregado com Sucesso!</h4>
+                                <p><strong>Caminho:</strong> ${successPath}</p>
+                                <p><strong>Tamanho:</strong> ${csvData.length.toLocaleString()} caracteres</p>
+                                <p><strong>Total de linhas:</strong> ${results.data.length.toLocaleString()}</p>
+                                <p><strong>Linhas válidas:</strong> ${validRows.length.toLocaleString()}</p>
+                                <p><strong>Colunas:</strong> ${results.meta.fields?.length || 'N/A'}</p>
+                                <p><strong>Erros de parsing:</strong> ${results.errors.length}</p>
+                                
+                                <hr>
+                                <h5> Amostra das primeiras colunas:</h5>
+                                <ul>
+                                    ${Object.keys(validRows[0] || {}).slice(0, 10).map(key => 
+                                        `<li><code>${key}</code>: ${validRows[0][key] || 'vazio'}</li>`
+                                    ).join('')}
+                                </ul>
+                                
+                                <hr>
+                                <h5> Verificação de colunas importantes:</h5>
+                                <ul>
+                                    ${[
+                                        'record_id',
+                                        'took_medications_yesterday',
+                                        'qualidade_sono',
+                                        'horas_sono',
+                                        'consultas_programadas',
+                                        'urgencia'
+                                    ].map(col => {
+                                        const exists = validRows[0] && validRows[0].hasOwnProperty(col);
+                                        return `<li><span class="badge ${exists ? 'bg-success' : 'bg-danger'}">${exists ? '' : ''}</span> ${col}</li>`;
+                                    }).join('')}
+                                </ul>
+                                
+                                <div class="mt-3">
+                                    <button class="btn btn-primary" onclick="window.location.href='index.html'">
+                                         Ir para Dashboard
+                                    </button>
+                                    <button class="btn btn-secondary" onclick="console.table(validRows.slice(0, 5))">
+                                         Ver dados no console
+                                    </button>
+                                </div>
+                            </div>
+                        `;
+                    },
+                    error: function(error) {
+                        throw new Error('Erro no parsing: ' + error.message);
+                    }
+                });
+                
+            } catch (error) {
+                console.error(' Test failed:', error);
+                
+                resultsDiv.innerHTML = `
+                    <div class="alert alert-danger">
+                        <h4> Falha no Teste</h4>
+                        <p><strong>Erro:</strong> ${error.message}</p>
+                        <p><strong>Possíveis causas:</strong></p>
+                        <ul>
+                            <li>Arquivo CSV não existe no caminho esperado</li>
+                            <li>Problemas de CORS (Cross-Origin Resource Sharing)</li>
+                            <li>Arquivo CSV corrompido ou vazio</li>
+                            <li>Servidor não está servindo arquivos estáticos corretamente</li>
+                        </ul>
+                        
+                        <hr>
+                        <h5> Soluções sugeridas:</h5>
+                        <ol>
+                            <li>Verificar se <code>data/rm4health_dados_reais.csv</code> existe</li>
+                            <li>Testar localmente primeiro</li>
+                            <li>Verificar configurações do GitHub Pages</li>
+                            <li>Verificar se o CSV não está sendo bloqueado</li>
+                        </ol>
+                        
+                        <div class="mt-3">
+                            <button class="btn btn-warning" onclick="location.reload()">
+                                 Tentar Novamente
+                            </button>
+                        </div>
+                    </div>
+                `;
+            }
+        }
+        
+        // Executar teste quando a página carregar
+        document.addEventListener('DOMContentLoaded', testCSVLoad);
+    </script>
+</body>
+</html>
