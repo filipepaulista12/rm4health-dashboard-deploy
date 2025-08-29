@@ -1,0 +1,97 @@
+﻿<!DOCTYPE html>
+<html>
+<head>
+    <title>TESTE SUPER SIMPLES</title>
+    <style>
+        body { font-family: Arial; padding: 20px; background: #f0f0f0; }
+        .log { background: #fff; padding: 10px; margin: 5px 0; border-left: 4px solid #007bff; }
+        .error { border-left-color: #dc3545; background: #f8d7da; }
+        .success { border-left-color: #28a745; background: #d4edda; }
+        .warning { border-left-color: #ffc107; background: #fff3cd; }
+    </style>
+</head>
+<body>
+    <h1> TESTE SUPER SIMPLES - CSV Loading</h1>
+    <div id="logs"></div>
+    
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+    <script>
+        const logs = document.getElementById('logs');
+        
+        function log(message, type = 'log') {
+            console.log(message);
+            const div = document.createElement('div');
+            div.className = `log ${type}`;
+            div.innerHTML = message;
+            logs.appendChild(div);
+            logs.scrollTop = logs.scrollHeight;
+        }
+        
+        async function testBasicCSV() {
+            log(' Iniciando teste básico...', 'log');
+            
+            try {
+                // Teste 1: Verificar se PapaParse carregou
+                if (typeof Papa === 'undefined') {
+                    throw new Error('PapaParse não carregou');
+                }
+                log(' PapaParse carregado', 'success');
+                
+                // Teste 2: Tentar fetch simples
+                log(' Testando fetch básico...', 'log');
+                const response = await fetch('data/rm4health_dados_reais.csv');
+                log(` Response status: ${response.status}`, response.ok ? 'success' : 'error');
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+                
+                // Teste 3: Ler conteúdo
+                log(' Lendo conteúdo...', 'log');
+                const text = await response.text();
+                log(` Tamanho do CSV: ${text.length} caracteres`, text.length > 0 ? 'success' : 'error');
+                log(` Primeiros 100 chars: "${text.substring(0, 100)}"`, 'log');
+                
+                if (text.length === 0) {
+                    throw new Error('CSV está vazio');
+                }
+                
+                // Teste 4: Parse básico
+                log(' Testando parse básico...', 'log');
+                Papa.parse(text, {
+                    header: true,
+                    skipEmptyLines: true,
+                    preview: 5, // Só primeiras 5 linhas para teste
+                    complete: function(results) {
+                        log(` Parse completo: ${results.data.length} linhas`, 'success');
+                        log(` Erros: ${results.errors.length}`, results.errors.length === 0 ? 'success' : 'warning');
+                        
+                        if (results.errors.length > 0) {
+                            log(` Primeiros erros: ${JSON.stringify(results.errors.slice(0, 3))}`, 'warning');
+                        }
+                        
+                        if (results.data.length > 0) {
+                            log(` Primeira linha: ${JSON.stringify(results.data[0])}`, 'success');
+                            log(` Colunas: ${Object.keys(results.data[0]).length}`, 'success');
+                        }
+                        
+                        log(' TESTE BÁSICO CONCLUÍDO COM SUCESSO!', 'success');
+                    },
+                    error: function(error) {
+                        log(` Erro no parse: ${error.message}`, 'error');
+                    }
+                });
+                
+            } catch (error) {
+                log(` ERRO FATAL: ${error.message}`, 'error');
+                log(`Stack: ${error.stack}`, 'error');
+            }
+        }
+        
+        // Executar quando a página carregar
+        window.addEventListener('load', () => {
+            setTimeout(testBasicCSV, 500);
+        });
+    </script>
+</body>
+</html>

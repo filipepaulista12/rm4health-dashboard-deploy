@@ -1,0 +1,97 @@
+﻿<!DOCTYPE html>
+<html>
+<head>
+    <title>DIAGNÓSTICO COMPLETO</title>
+    <style>
+        body { font-family: Arial; padding: 20px; }
+        .test { margin: 10px 0; padding: 10px; border: 1px solid #ddd; }
+        .pass { background: #d4edda; border-color: #c3e6cb; }
+        .fail { background: #f8d7da; border-color: #f5c6cb; }
+        .warn { background: #fff3cd; border-color: #ffeaa7; }
+        pre { background: #f8f9fa; padding: 5px; overflow-x: auto; font-size: 12px; }
+    </style>
+</head>
+<body>
+    <h1> DIAGNÓSTICO COMPLETO - RM4Health</h1>
+    <div id="tests"></div>
+    
+    <script>
+        const testsDiv = document.getElementById('tests');
+        let testCount = 0;
+        
+        function addTest(name, status, details = '') {
+            testCount++;
+            const div = document.createElement('div');
+            div.className = `test ${status}`;
+            div.innerHTML = `
+                <h3>${testCount}. ${name} ${status === 'pass' ? '' : status === 'fail' ? '' : ''}</h3>
+                <div>${details}</div>
+            `;
+            testsDiv.appendChild(div);
+            console.log(`Test ${testCount}: ${name} - ${status}`, details);
+        }
+        
+        // TESTE 1: Ambiente
+        addTest('Ambiente', 'pass', `URL: ${window.location.href}<br>Protocolo: ${window.location.protocol}`);
+        
+        // TESTE 2: PapaParse
+        setTimeout(() => {
+            addTest('PapaParse', typeof Papa !== 'undefined' ? 'pass' : 'fail', 
+                typeof Papa !== 'undefined' ? 'Carregado' : 'Não carregado');
+        }, 1000);
+        
+        // TESTE 3: Fetch
+        addTest('Fetch API', 'fetch' in window ? 'pass' : 'fail', 
+            'fetch' in window ? 'Disponível' : 'Não disponível');
+        
+        // TESTE 4: Protocolo
+        addTest('Protocolo', window.location.protocol === 'file:' ? 'warn' : 'pass', 
+            window.location.protocol === 'file:' ? 'file:// - pode ter CORS' : 'HTTP OK');
+        
+        // TESTE 5: CSV
+        setTimeout(async () => {
+            const paths = ['data/rm4health_dados_reais.csv', './data/rm4health_dados_reais.csv'];
+            let success = false;
+            
+            for (const path of paths) {
+                try {
+                    const response = await fetch(path);
+                    if (response.ok) {
+                        const text = await response.text();
+                        addTest(`CSV (${path})`, 'pass', `${text.length} chars`);
+                        success = true;
+                        break;
+                    }
+                } catch (e) {
+                    console.warn(`Erro ${path}:`, e);
+                }
+            }
+            
+            if (!success) {
+                addTest('CSV Loading', 'fail', 'Falhou em todos os caminhos');
+            }
+        }, 2000);
+        
+        // TESTE 6: Data Loader
+        setTimeout(() => {
+            if (typeof window.RM4HealthData !== 'undefined') {
+                addTest('RM4HealthData', 'pass', 'Classe carregada');
+                
+                setTimeout(async () => {
+                    try {
+                        const result = await window.RM4HealthData.loadData();
+                        addTest('loadData()', 'pass', `${result.statistics?.totalParticipants || 0} participantes`);
+                    } catch (error) {
+                        addTest('loadData()', 'fail', error.message);
+                    }
+                }, 1000);
+            } else {
+                addTest('RM4HealthData', 'fail', 'Classe não encontrada');
+            }
+        }, 3000);
+    </script>
+    
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+    <script src="js/data-loader.js"></script>
+</body>
+</html>
