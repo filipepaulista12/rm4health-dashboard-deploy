@@ -1,160 +1,249 @@
-﻿// Main Dashboard JavaScript
+﻿// Dashboard Principal RM4Health - VERSÃO CORRIGIDA
 class RM4HealthDashboard {
     constructor() {
+        this.isLoading = false;
         this.data = null;
         this.charts = {};
-        this.initialized = false;
+        this.initEventListeners();
     }
 
-    async init() {
-        try {
-            console.log('Initializing RM4Health Dashboard...');
-            
-            // Mostrar loading
-            this.showLoading();
-            
-            // Carregar dados
-            this.data = await window.RM4HealthData.loadData();
-            
-            // Inicializar componentes
-            this.updateStatistics();
-            this.initializeCharts();
-            this.updateParticipantsList();
-            this.updateAlerts();
-            this.setLastUpdateTime();
-            
-            // Mostrar dashboard
-            this.showDashboard();
-            
-            this.initialized = true;
-            console.log('Dashboard initialized successfully');
-            
-        } catch (error) {
-            console.error('Error initializing dashboard:', error);
-            this.showError(error.message);
+    initEventListeners() {
+        // Event listeners para navegação
+        document.querySelectorAll('.nav-link').forEach(link => {
+            link.addEventListener('click', (e) => {
+                e.preventDefault();
+                const targetPage = e.target.getAttribute('href');
+                if (targetPage && targetPage !== '#') {
+                    this.navigateToPage(targetPage);
+                }
+            });
+        });
+
+        // Event listener para refresh
+        const refreshBtn = document.getElementById('refreshData');
+        if (refreshBtn) {
+            refreshBtn.addEventListener('click', () => {
+                this.loadData(true);
+            });
         }
     }
 
-    showLoading() {
-        document.getElementById('loadingContainer').classList.remove('d-none');
-        document.getElementById('dashboardContent').classList.add('d-none');
-        document.getElementById('errorContainer').classList.add('d-none');
-    }
-
-    showDashboard() {
-        document.getElementById('loadingContainer').classList.add('d-none');
-        document.getElementById('dashboardContent').classList.remove('d-none');
-        document.getElementById('errorContainer').classList.add('d-none');
+    navigateToPage(page) {
+        // Salvar estado antes de navegar
+        if (this.data) {
+            localStorage.setItem('rm4health_data', JSON.stringify(this.data));
+        }
         
-        // Adicionar animação
-        document.getElementById('dashboardContent').classList.add('fade-in');
+        // Navegar para a página
+        window.location.href = page;
     }
 
-    showError(message) {
-        document.getElementById('loadingContainer').classList.add('d-none');
-        document.getElementById('dashboardContent').classList.add('d-none');
-        document.getElementById('errorContainer').classList.remove('d-none');
-        document.getElementById('errorMessage').textContent = message;
+    async init() {
+        console.log(' Initializing RM4Health Dashboard...');
+        
+        // Mostrar loading
+        this.showLoading();
+        
+        try {
+            // Tentar carregar dados salvos primeiro
+            const savedData = localStorage.getItem('rm4health_data');
+            if (savedData && !this.isForceRefresh) {
+                console.log(' Loading saved data from localStorage...');
+                this.data = JSON.parse(savedData);
+                await this.updateDashboard();
+            } else {
+                // Carregar dados do CSV
+                await this.loadData();
+            }
+        } catch (error) {
+            console.error(' Initialization error:', error);
+            this.showError('Erro ao inicializar dashboard: ' + error.message);
+        } finally {
+            this.hideLoading();
+        }
     }
 
-    updateStatistics() {
+    async loadData(forceRefresh = false) {
+        if (this.isLoading && !forceRefresh) {
+            console.log(' Data loading already in progress...');
+            return;
+        }
+
+        this.isLoading = true;
+        this.showLoading();
+
+        try {
+            console.log(' Loading data from CSV...');
+            
+            // Verificar se RM4HealthData existe
+            if (!window.RM4HealthData) {
+                throw new Error('RM4HealthData não encontrado. Verifique se data-loader.js foi carregado.');
+            }
+
+            // Carregar dados
+            this.data = await window.RM4HealthData.loadData();
+            
+            // Salvar no localStorage
+            localStorage.setItem('rm4health_data', JSON.stringify(this.data));
+            
+            console.log(' Data loaded successfully:', this.data);
+            
+            // Atualizar dashboard
+            await this.updateDashboard();
+            
+        } catch (error) {
+            console.error(' Error loading data:', error);
+            this.showError('Erro ao carregar dados: ' + error.message + '<br><small>Verifique se o arquivo CSV está acessível.</small>');
+        } finally {
+            this.isLoading = false;
+            this.hideLoading();
+        }
+    }
+
+    async updateDashboard() {
+        console.log(' Updating dashboard with real data...');
+        
+        if (!this.data || !this.data.statistics) {
+            throw new Error('Dados inválidos ou não carregados');
+        }
+
+        try {
+            // Atualizar cards estatísticos
+            this.updateStatCards();
+            
+            // Atualizar gráficos
+            await this.updateCharts();
+            
+            // Atualizar tabela de alto risco
+            this.updateHighRiskTable();
+            
+            // Atualizar timestamp
+            this.updateTimestamp();
+            
+            console.log(' Dashboard updated successfully');
+            
+        } catch (error) {
+            console.error(' Error updating dashboard:', error);
+            throw error;
+        }
+    }
+
+    updateStatCards() {
         const stats = this.data.statistics;
         
-        // Atualizar cards estatísticos
-        document.getElementById('totalParticipants').textContent = 
-            stats.totalParticipants || 0;
-        
-        document.getElementById('averageAdherence').textContent = 
-            `${stats.medicationAdherence?.percentage || 0}%`;
-        
-        document.getElementById('averageSleep').textContent = 
-            stats.sleepQuality?.averagePSQI || '0.0';
-        
-        document.getElementById('healthAlerts').textContent = 
-            stats.healthDeterioration?.totalAlerts || 0;
-    }
+        // Card 1: Total de Participantes
+        const totalCard = document.getElementById('totalParticipants');
+        if (totalCard) {
+            totalCard.textContent = stats.totalParticipants || 0;
+        }
 
-    initializeCharts() {
-        // Gráfico de tendência de aderência
-        this.createAdherenceChart();
-        
-        // Gráfico de distribuição de idade
-        this.createAgeDistributionChart();
-    }
-
-    createAdherenceChart() {
-        const ctx = document.getElementById('adherenceChart');
-        if (!ctx) return;
-
-        const chartData = this.data.charts.adherenceTrend || {
-            labels: ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun'],
-            datasets: [{
-                label: 'Aderência à Medicação (%)',
-                data: [65, 70, 68, 75, 72, 78],
-                borderColor: '#0d6efd',
-                backgroundColor: 'rgba(13, 110, 253, 0.1)',
-                fill: true,
-                tension: 0.4
-            }]
-        };
-
-        this.charts.adherence = new Chart(ctx, {
-            type: 'line',
-            data: chartData,
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: {
-                    legend: {
-                        display: true,
-                        position: 'top'
-                    },
-                    title: {
-                        display: false
-                    }
-                },
-                scales: {
-                    y: {
-                        beginAtZero: true,
-                        max: 100,
-                        ticks: {
-                            callback: function(value) {
-                                return value + '%';
-                            }
-                        }
-                    }
+        // Card 2: Aderência à Medicação
+        const adherenceCard = document.getElementById('medicationAdherence');
+        const adherenceProgress = document.getElementById('adherenceProgress');
+        if (adherenceCard && stats.medicationAdherence) {
+            adherenceCard.textContent = `${stats.medicationAdherence.percentage}%`;
+            if (adherenceProgress) {
+                adherenceProgress.style.width = `${stats.medicationAdherence.percentage}%`;
+                // Cor baseada na percentagem
+                if (stats.medicationAdherence.percentage >= 80) {
+                    adherenceProgress.className = 'progress-bar bg-success';
+                } else if (stats.medicationAdherence.percentage >= 60) {
+                    adherenceProgress.className = 'progress-bar bg-warning';
+                } else {
+                    adherenceProgress.className = 'progress-bar bg-danger';
                 }
             }
-        });
+        }
+
+        // Card 3: Qualidade do Sono
+        const sleepCard = document.getElementById('sleepQuality');
+        if (sleepCard && stats.sleepQuality) {
+            sleepCard.innerHTML = `
+                <div class="fw-bold">${stats.sleepQuality.averagePSQI}</div>
+                <small class="text-muted">${stats.sleepQuality.qualityLevel}</small>
+            `;
+        }
+
+        // Card 4: Alertas de Saúde
+        const alertsCard = document.getElementById('healthAlerts');
+        const alertsBadge = document.getElementById('alertsBadge');
+        if (alertsCard && stats.healthDeterioration) {
+            alertsCard.textContent = stats.healthDeterioration.totalAlerts;
+            if (alertsBadge) {
+                alertsBadge.textContent = stats.healthDeterioration.totalAlerts;
+                alertsBadge.className = stats.healthDeterioration.totalAlerts > 0 ? 
+                    'badge bg-danger' : 'badge bg-success';
+            }
+        }
+
+        console.log(' Stat cards updated with real data');
     }
 
-    createAgeDistributionChart() {
-        const ctx = document.getElementById('ageChart');
-        if (!ctx) return;
+    async updateCharts() {
+        console.log(' Updating charts...');
+        
+        try {
+            // Destruir gráficos existentes
+            Object.values(this.charts).forEach(chart => {
+                if (chart && typeof chart.destroy === 'function') {
+                    chart.destroy();
+                }
+            });
+            this.charts = {};
 
-        const ageData = this.data.charts.ageDistribution || {
-            '18-30': 10,
-            '31-50': 25,
-            '51-65': 35,
-            '65+': 20,
-            'Não informado': 5
+            // Verificar se Chart.js está disponível
+            if (typeof Chart === 'undefined') {
+                console.error(' Chart.js not loaded');
+                document.querySelectorAll('.chart-container').forEach(container => {
+                    container.innerHTML = '<div class="alert alert-warning">Chart.js não carregado</div>';
+                });
+                return;
+            }
+
+            // Gráfico 1: Distribuição Etária
+            await this.createAgeDistributionChart();
+            
+            // Gráfico 2: Tendência de Aderência
+            await this.createAdherenceTrendChart();
+            
+            console.log(' Charts updated successfully');
+            
+        } catch (error) {
+            console.error(' Error updating charts:', error);
+            document.querySelectorAll('.chart-container').forEach(container => {
+                if (!container.innerHTML.includes('alert')) {
+                    container.innerHTML = `<div class="alert alert-danger">Erro: ${error.message}</div>`;
+                }
+            });
+        }
+    }
+
+    async createAgeDistributionChart() {
+        const ageCanvas = document.getElementById('ageDistributionChart');
+        if (!ageCanvas) {
+            console.warn('Age distribution chart canvas not found');
+            return;
+        }
+
+        const ctx = ageCanvas.getContext('2d');
+        const ageData = this.data.charts?.ageDistribution || {
+            '18-30': 0, '31-50': 0, '51-65': 0, '65+': 0, 'Não informado': 0
         };
 
-        this.charts.age = new Chart(ctx, {
+        this.charts.ageDistribution = new Chart(ctx, {
             type: 'doughnut',
             data: {
                 labels: Object.keys(ageData),
                 datasets: [{
                     data: Object.values(ageData),
                     backgroundColor: [
-                        '#0d6efd',
-                        '#198754',
-                        '#ffc107',
-                        '#dc3545',
-                        '#6c757d'
+                        '#FF6384',
+                        '#36A2EB', 
+                        '#FFCE56',
+                        '#4BC0C0',
+                        '#9966FF'
                     ],
-                    borderWidth: 2,
-                    borderColor: '#fff'
+                    borderWidth: 2
                 }]
             },
             options: {
@@ -163,203 +252,229 @@ class RM4HealthDashboard {
                 plugins: {
                     legend: {
                         position: 'bottom'
+                    },
+                    title: {
+                        display: true,
+                        text: 'Distribuição por Idade'
                     }
                 }
             }
         });
     }
 
-    updateParticipantsList() {
-        const container = document.getElementById('highRiskParticipants');
-        const participants = this.data.statistics.healthDeterioration?.highRiskParticipants || [];
-
-        if (participants.length === 0) {
-            container.innerHTML = '<p class="text-muted">Nenhum participante com alto risco detectado.</p>';
+    async createAdherenceTrendChart() {
+        const trendCanvas = document.getElementById('adherenceTrendChart');
+        if (!trendCanvas) {
+            console.warn('Adherence trend chart canvas not found');
             return;
         }
 
-        const html = participants.map(participant => `
-            <div class="d-flex justify-content-between align-items-center mb-2 p-2 rounded" 
-                 style="background-color: #f8f9fa;">
-                <div>
+        const ctx = trendCanvas.getContext('2d');
+        const trendData = this.data.charts?.adherenceTrend;
+
+        if (trendData) {
+            this.charts.adherenceTrend = new Chart(ctx, {
+                type: 'line',
+                data: trendData,
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            max: 100,
+                            ticks: {
+                                callback: function(value) {
+                                    return value + '%';
+                                }
+                            }
+                        }
+                    },
+                    plugins: {
+                        title: {
+                            display: true,
+                            text: 'Tendência de Aderência à Medicação'
+                        }
+                    }
+                }
+            });
+        }
+    }
+
+    updateHighRiskTable() {
+        const tableBody = document.getElementById('highRiskTableBody');
+        if (!tableBody || !this.data.statistics.healthDeterioration) {
+            console.warn('High risk table not found or no deterioration data');
+            return;
+        }
+
+        const highRiskParticipants = this.data.statistics.healthDeterioration.highRiskParticipants || [];
+        
+        tableBody.innerHTML = '';
+
+        if (highRiskParticipants.length === 0) {
+            tableBody.innerHTML = `
+                <tr>
+                    <td colspan="4" class="text-center text-muted">
+                        Nenhum participante de alto risco identificado
+                    </td>
+                </tr>
+            `;
+            return;
+        }
+
+        highRiskParticipants.forEach(participant => {
+            const row = document.createElement('tr');
+            
+            const riskClass = participant.riskLevel === 'Alto' ? 'danger' : 
+                             participant.riskLevel === 'Médio' ? 'warning' : 'info';
+            
+            row.innerHTML = `
+                <td>
                     <strong>${participant.id}</strong>
-                    <br>
-                    <small class="text-muted">
-                        ${participant.factors.slice(0, 2).join(', ')}
-                        ${participant.factors.length > 2 ? '...' : ''}
-                    </small>
-                </div>
-                <div class="text-end">
-                    <span class="badge ${this.getRiskBadgeClass(participant.riskLevel)}">
+                </td>
+                <td>
+                    <span class="badge bg-${riskClass}">
                         ${participant.riskLevel}
                     </span>
-                    <br>
-                    <small class="text-muted">Score: ${participant.riskScore}</small>
-                </div>
-            </div>
-        `).join('');
-
-        container.innerHTML = html;
-    }
-
-    updateAlerts() {
-        const container = document.getElementById('recentAlerts');
-        const stats = this.data.statistics;
-        
-        const alerts = [];
-        
-        // Gerar alertas baseados nos dados
-        if (stats.medicationAdherence?.percentage < 70) {
-            alerts.push({
-                type: 'warning',
-                message: 'Aderência à medicação abaixo do esperado',
-                time: '2 horas atrás'
-            });
-        }
-
-        if (stats.sleepQuality?.averagePSQI > 10) {
-            alerts.push({
-                type: 'danger',
-                message: 'Qualidade do sono crítica detectada',
-                time: '4 horas atrás'
-            });
-        }
-
-        if (stats.healthDeterioration?.totalAlerts > 5) {
-            alerts.push({
-                type: 'danger',
-                message: `${stats.healthDeterioration.totalAlerts} participantes em alto risco`,
-                time: '1 hora atrás'
-            });
-        }
-
-        if (alerts.length === 0) {
-            alerts.push({
-                type: 'success',
-                message: 'Nenhum alerta crítico no momento',
-                time: 'Agora'
-            });
-        }
-
-        const html = alerts.map(alert => `
-            <div class="alert alert-${alert.type} alert-dismissible fade show mb-2" role="alert">
-                <i class="fas fa-${this.getAlertIcon(alert.type)} me-2"></i>
-                <strong>${alert.message}</strong>
-                <br>
-                <small class="text-muted">${alert.time}</small>
-                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-            </div>
-        `).join('');
-
-        container.innerHTML = html;
-    }
-
-    getRiskBadgeClass(riskLevel) {
-        switch (riskLevel) {
-            case 'Alto': return 'bg-danger';
-            case 'Médio': return 'bg-warning text-dark';
-            default: return 'bg-success';
-        }
-    }
-
-    getAlertIcon(type) {
-        switch (type) {
-            case 'danger': return 'exclamation-triangle';
-            case 'warning': return 'exclamation-circle';
-            case 'success': return 'check-circle';
-            default: return 'info-circle';
-        }
-    }
-
-    setLastUpdateTime() {
-        const now = new Date();
-        const timeString = now.toLocaleString('pt-PT', {
-            day: '2-digit',
-            month: '2-digit',
-            year: 'numeric',
-            hour: '2-digit',
-            minute: '2-digit'
+                </td>
+                <td>
+                    <div class="progress" style="height: 20px;">
+                        <div class="progress-bar bg-${riskClass}" 
+                             style="width: ${participant.riskScore}%">
+                            ${participant.riskScore}%
+                        </div>
+                    </div>
+                </td>
+                <td>
+                    <small class="text-muted">
+                        ${participant.factors.join(', ') || 'Sem fatores específicos'}
+                    </small>
+                </td>
+            `;
+            
+            tableBody.appendChild(row);
         });
-        
-        const updateElement = document.getElementById('lastUpdate');
-        if (updateElement) {
-            updateElement.textContent = timeString;
+
+        console.log(' High risk table updated with', highRiskParticipants.length, 'participants');
+    }
+
+    updateTimestamp() {
+        const timestampElement = document.getElementById('lastUpdate');
+        if (timestampElement) {
+            const now = new Date().toLocaleString('pt-PT');
+            timestampElement.textContent = `Última atualização: ${now}`;
         }
     }
 
-    // Método para refresh dos dados
-    async refresh() {
-        if (!this.initialized) return;
+    showLoading() {
+        const loadingElement = document.getElementById('loadingIndicator');
+        if (loadingElement) {
+            loadingElement.style.display = 'block';
+        }
         
-        try {
-            console.log('Refreshing dashboard data...');
-            this.showLoading();
-            
-            // Recarregar dados
-            this.data = await window.RM4HealthData.loadData();
-            
-            // Atualizar componentes
-            this.updateStatistics();
-            this.updateParticipantsList();
-            this.updateAlerts();
-            this.setLastUpdateTime();
-            
-            // Atualizar gráficos
-            if (this.charts.adherence) {
-                this.charts.adherence.destroy();
-            }
-            if (this.charts.age) {
-                this.charts.age.destroy();
-            }
-            this.initializeCharts();
-            
-            this.showDashboard();
-            
-            console.log('Dashboard refreshed successfully');
-        } catch (error) {
-            console.error('Error refreshing dashboard:', error);
-            this.showError('Erro ao atualizar dados: ' + error.message);
+        // Desabilitar botão de refresh
+        const refreshBtn = document.getElementById('refreshData');
+        if (refreshBtn) {
+            refreshBtn.disabled = true;
+            refreshBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Carregando...';
         }
     }
 
-    // Métodos utilitários
-    exportData() {
-        const dataStr = window.RM4HealthData.exportData('json');
-        const dataBlob = new Blob([dataStr], {type: 'application/json'});
-        const url = URL.createObjectURL(dataBlob);
+    hideLoading() {
+        const loadingElement = document.getElementById('loadingIndicator');
+        if (loadingElement) {
+            loadingElement.style.display = 'none';
+        }
         
-        const link = document.createElement('a');
-        link.href = url;
-        link.download = 'rm4health-data-export.json';
-        link.click();
+        // Reabilitar botão de refresh
+        const refreshBtn = document.getElementById('refreshData');
+        if (refreshBtn) {
+            refreshBtn.disabled = false;
+            refreshBtn.innerHTML = '<i class="fas fa-sync-alt"></i> Atualizar';
+        }
+    }
+
+    showError(message) {
+        // Remover alertas existentes
+        document.querySelectorAll('.alert-custom').forEach(alert => alert.remove());
         
-        URL.revokeObjectURL(url);
+        const alertDiv = document.createElement('div');
+        alertDiv.className = 'alert alert-danger alert-dismissible fade show alert-custom';
+        alertDiv.innerHTML = `
+            <i class="fas fa-exclamation-triangle"></i>
+            ${message}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        `;
+        
+        // Inserir no topo do container principal
+        const mainContainer = document.querySelector('.container-fluid');
+        if (mainContainer) {
+            mainContainer.insertBefore(alertDiv, mainContainer.firstChild);
+        }
+        
+        // Auto-remove após 10 segundos
+        setTimeout(() => {
+            alertDiv.remove();
+        }, 10000);
+    }
+
+    // Método para debug
+    debugInfo() {
+        console.log(' Dashboard Debug Info:');
+        console.log('Data:', this.data);
+        console.log('Charts:', Object.keys(this.charts));
+        console.log('Is Loading:', this.isLoading);
+        return {
+            data: this.data,
+            charts: Object.keys(this.charts),
+            isLoading: this.isLoading
+        };
     }
 }
 
-// Inicializar dashboard quando página carregar
-document.addEventListener('DOMContentLoaded', () => {
-    const dashboard = new RM4HealthDashboard();
-    dashboard.init();
+// Inicialização global
+document.addEventListener('DOMContentLoaded', async function() {
+    console.log(' DOM loaded, initializing RM4Health Dashboard...');
     
-    // Tornar dashboard disponível globalmente
-    window.dashboard = dashboard;
-    
-    // Auto-refresh a cada 5 minutos
-    setInterval(() => {
-        dashboard.refresh();
-    }, 5 * 60 * 1000);
+    try {
+        // Aguardar um pouco para garantir que todos os scripts carregaram
+        await new Promise(resolve => setTimeout(resolve, 100));
+        
+        // Criar instância global do dashboard
+        window.rm4Dashboard = new RM4HealthDashboard();
+        
+        // Inicializar
+        await window.rm4Dashboard.init();
+        
+        console.log(' RM4Health Dashboard initialized successfully!');
+        
+    } catch (error) {
+        console.error(' Failed to initialize dashboard:', error);
+        
+        // Mostrar erro na interface
+        const container = document.querySelector('.container-fluid');
+        if (container) {
+            const errorDiv = document.createElement('div');
+            errorDiv.className = 'alert alert-danger mt-3';
+            errorDiv.innerHTML = `
+                <h4><i class="fas fa-exclamation-triangle"></i> Erro de Inicialização</h4>
+                <p>Falha ao inicializar o dashboard: <strong>${error.message}</strong></p>
+                <p class="mb-0">
+                    <small>Verifique o console do navegador para mais detalhes.</small>
+                </p>
+            `;
+            container.insertBefore(errorDiv, container.firstChild);
+        }
+    }
 });
 
-// Adicionar event listeners para interações
-document.addEventListener('click', (e) => {
-    // Refresh button
-    if (e.target.id === 'refreshButton') {
-        window.dashboard.refresh();
+// Função global para debug
+window.debugRM4Dashboard = () => {
+    if (window.rm4Dashboard) {
+        return window.rm4Dashboard.debugInfo();
+    } else {
+        console.log(' Dashboard not initialized');
+        return null;
     }
-    
-    // Export button
-    if (e.target.id === 'exportButton') {
-        window.dashboard.exportData();
-    }
-});
+};
