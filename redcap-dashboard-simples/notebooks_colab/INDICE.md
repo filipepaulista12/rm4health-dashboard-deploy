@@ -1,74 +1,65 @@
-# 📊 RM4Health - Índice dos Notebooks Colab
+﻿#  RM4Health - Notebooks com Funções Reais
 
-## 🎯 **Bem-vindo ao Sistema RM4Health com Google Colab!**
+##  **Sistema RM4Health com Google Colab**
 
-Esta versão contém **17 notebooks completos** para análise de dados do projeto RM4Health, todos otimizados para execução no Google Colab.
+Esta versão contém **4 notebooks completos** com as **funções reais** do sistema RM4Health, utilizando **dados reais** do REDCap. Todos os notebooks são otimizados para execução no Google Colab.
 
-## 📁 **Estrutura dos Notebooks**
+##  **Notebooks Disponíveis**
 
-### 🔧 **Configuração e Setup**
-1. **`rm4health_configuracao_ambiente.ipynb`** - Configuração inicial e carregamento de dados
+### 1.  **`rm4health_analise_completa_real.ipynb`**
+- **Descrição**: Análise completa com todas as funções principais do sistema
+- **Funções Reais**: `RM4HealthProcessor`, `get_basic_stats()`, `calculate_adherence_rates_real()`, `detect_health_deterioration_real()`
+- **Dados**: CSV real do REDCap com 514 colunas
+- **Visualizações**: Estatísticas básicas, análise de aderência, detecção de deterioração
 
-### 📊 **Análises Principais**
-2. **`rm4health_analise_geral.ipynb`** - Análise exploratória geral dos dados
-3. **`rm4health_qualidade_dados.ipynb`** - Análise de qualidade e limpeza de dados
-4. **`rm4health_padroes.ipynb`** - Identificação de padrões nos dados
+### 2.  **`rm4health_medicacao_real.ipynb`** 
+- **Descrição**: Análise de medicação e aderência - replicação exata da função do dashboard
+- **Funções Reais**: `calculate_adherence_rates()`, `analyze_adherence_factors()`
+- **Algoritmo**: Escala de 4 pontos (Sim=4, Não=0, Às vezes=2)
+- **Análises**: Aderência por participante, medicação específica, correlação com idade
 
-### 🏥 **Análises Clínicas**
-5. **`rm4health_outcomes_clinicos.ipynb`** - Resultados e desfechos clínicos
-6. **`rm4health_analise_medicacao.ipynb`** - Análise de medicações e aderência
-7. **`rm4health_analise_sono.ipynb`** - Padrões de sono e qualidade
-8. **`rm4health_comorbidades.ipynb`** - Análise de comorbidades
+### 3.  **`rm4health_sono_psqi_real.ipynb`**
+- **Descrição**: Análise científica de qualidade do sono usando algoritmo PSQI
+- **Algoritmo PSQI**: 7 componentes (0-3 pontos cada), thresholds científicos (5 bom, >10 intervenção)
+- **Campos Reais**: hora_deitar, tempo_adormecer, qualidade_sono, etc.
+- **Visualizações**: Radar charts, distribuições por componente, análise de risco
 
-### 🚑 **Utilização de Serviços**
-9. **`rm4health_hospitalizacoes.ipynb`** - Análise de hospitalizações
-10. **`rm4health_urgencias.ipynb`** - Visitas de emergência
-11. **`rm4health_utilizacao_servicos_saude.ipynb`** - Utilização geral de serviços
+### 4.  **`rm4health_servicos_saude_real.ipynb`**
+- **Descrição**: Análise de utilização de serviços de saúde e preditores
+- **Funções Reais**: `identify_utilization_predictors_rm4health()`
+- **Algoritmo**: Percentil 75 para identificação de alto utilizadores
+- **Análises**: Consultas programadas, urgências, internamentos, preditores de utilização
 
-### 👥 **Análises Sociais**
-12. **`rm4health_cuidadores.ipynb`** - Análise de cuidadores informais
-13. **`rm4health_monitorizacao.ipynb`** - Monitorização remota e dispositivos
+##  **Dados**
+- **Arquivo**: `../data/rm4health_dados_reais.csv`
+- **Fonte**: REDCap export real (RM4HealthRemoteMonit_DATA_LABELS_2025-08-11_0937.csv)
+- **Colunas**: 514 variáveis reais do projeto
+- **Participantes**: Dados reais de pacientes (anonimizados)
 
-### 📈 **Análises Avançadas**
-14. **`rm4health_longitudinal.ipynb`** - Análise longitudinal (tendências)
-15. **`rm4health_custos.ipynb`** - Análise de custos e economia
-16. **`rm4health_predicao.ipynb`** - Modelos preditivos e ML
+##  **Como Usar**
 
-### ⚠️ **Alertas e Riscos**
-17. **`rm4health_alertas.ipynb`** - Sistema de alertas e notificações
-18. **`rm4health_analise_riscos.ipynb`** - Análise de fatores de risco
+### Google Colab (Recomendado)
+1. Acesse: https://colab.research.google.com/
+2. Clique em "GitHub" 
+3. Cole o URL: `https://github.com/filipepaulista12/rm4health-dashboard-deploy`
+4. Selecione o branch: `notebooks-google-colab`
+5. Escolha um dos 4 notebooks
+6. Execute célula por célula (Ctrl+Enter)
 
-## 🚀 **Como Usar**
+### Características dos Notebooks
+-  **Auto-setup**: Clona repositório e instala dependências automaticamente
+-  **Dados Reais**: Utiliza CSV real do REDCap (não dados mock)
+-  **Funções Reais**: Replica exatamente as funções do sistema dashboard
+-  **Algoritmos Científicos**: PSQI, scoring de aderência, detecção de risco
+-  **Visualizações Profissionais**: Gráficos prontos para apresentações
 
-### **Opção 1: Google Colab (Recomendado)**
-1. Clique no link "Open in Colab" no topo de qualquer notebook
-2. Execute a primeira célula (carregamento automático)
-3. Navegue pelos notebooks conforme necessário
+##  **Requisitos**
+- Conta Google (para Google Colab)
+- Conexão à internet
+- Navegador web moderno
 
-### **Opção 2: Ambiente Local**
-1. Certifique-se de ter Python 3.8+ instalado
-2. Instale dependências: `pip install -r requirements.txt`
-3. Execute: `jupyter notebook` ou `jupyter lab`
-4. Abra os notebooks da pasta `notebooks_colab/`
-
-## 📋 **Dados Necessários**
-
-Para usar os notebooks, você precisa de:
-- **Arquivo CSV** em `data/rm4health_dados.csv`
-- **Ou use o arquivo de exemplo** `data/rm4health_dados_exemplo.csv`
-
-## 🔄 **Fluxo Recomendado**
-
-1. **Comece por**: `rm4health_configuracao_ambiente.ipynb`
-2. **Depois**: `rm4health_analise_geral.ipynb`
-3. **Continue com**: Análises específicas do seu interesse
-
-## 📞 **Suporte**
-
-- **Documentação completa**: `README_COLAB.md`
-- **Script de teste**: `test_sistema.py`
-- **Dados de exemplo**: `data/rm4health_dados_exemplo.csv`
+##  **Nota Importante**
+Todos os notebooks utilizam **funções reais** extraídas do sistema `data_processor.py` e **dados reais** do REDCap. Não são templates ou exemplos - são ferramentas funcionais para análise completa do projeto RM4Health.
 
 ---
-
-**🎉 Pronto para análise colaborativa de dados RM4Health!**
+*Notebooks criados com base nas funções reais do sistema RM4Health para uso pelos colaboradores do projeto.*
