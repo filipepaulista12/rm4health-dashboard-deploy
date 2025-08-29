@@ -2,28 +2,30 @@ from flask import Flask, render_template, jsonify, request
 import plotly.graph_objs as go
 import plotly.utils
 import json
+import os
 from redcap_client import REDCapClient
 from data_processor import DataProcessor
 from config import Config
-from csv_data_manager import CSVDataManager
 import traceback
 from datetime import datetime
+from static_data_provider import StaticDataProvider
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'rm4health_dashboard_secret_key'
 
-# Inicializar sistema CSV
-csv_manager = CSVDataManager()
+# USAR APENAS DADOS ESTÁTICOS - NÃO MEXER NO REDCAP
+static_provider = StaticDataProvider()
 
 # Cache para dados (simples cache em memória)
 cached_data = {
     'data': None,
     'last_update': None,
-    'cache_duration': 300  # 5 minutos
+    'cache_duration': 300,  # 5 minutos
+    'is_static': True  # SEMPRE dados estáticos
 }
 
 def get_cached_data():
-    """Retorna dados CSV (com atualização automática via VPN quando possível)"""
+    """Retorna dados estáticos SEMPRE - sem REDCap"""
     now = datetime.now()
     
     # Verifica se precisa atualizar cache
@@ -31,10 +33,12 @@ def get_cached_data():
         cached_data['last_update'] is None or 
         (now - cached_data['last_update']).seconds > cached_data['cache_duration']):
         
-        print("🔄 Atualizando cache via CSV...")
-        data = csv_manager.get_data()  # Usa CSV + atualização inteligente
+        print("� Carregando dados demo...")
+        data = static_provider.get_records()
         cached_data['data'] = data
         cached_data['last_update'] = now
+        cached_data['is_static'] = True
+        print(f"✅ Dados demo carregados: {len(data)} registros")
         
     return cached_data['data']
 
@@ -54,7 +58,9 @@ def dashboard():
             'project_name': Config.PROJECT_NAME,
             'project_title': Config.PROJECT_TITLE,
             'project_subtitle': Config.PROJECT_SUBTITLE,
-            'last_update': cached_data['last_update'].strftime('%H:%M:%S') if cached_data['last_update'] else 'N/A'
+            'last_update': cached_data['last_update'].strftime('%H:%M:%S') if cached_data['last_update'] else 'N/A',
+            'is_static_data': cached_data['is_static'],
+            'data_source': 'Dados Demo' if cached_data['is_static'] else 'REDCap Live'
         })
         
         # Gráficos básicos
@@ -283,67 +289,18 @@ def api_column_summary(column_name):
 
 @app.route('/api/test-connection')
 def api_test_connection():
-    """API endpoint para testar conexão e status CSV"""
+    """API endpoint para testar conexão"""
     try:
-        status = csv_manager.get_data_status()
+        success = redcap.test_connection()
         return jsonify({
-            'success': True,
-            'csv_status': status,
-            'message': f'CSV: {status["records_count"]} registros, idade: {status["csv_age_hours"]:.1f}h'
+            'success': success,
+            'message': 'Conexão testada com sucesso!' if success else 'Falha na conexão'
         })
     except Exception as e:
         return jsonify({
             'success': False,
             'error': str(e)
         })
-
-@app.route('/api/force-update')
-def api_force_update():
-    """Força atualização via REDCap (usar quando conectado via VPN)"""
-    try:
-        print("🔄 Forçando atualização via VPN...")
-        data = csv_manager.force_update()
-        
-        if data and len(data) > 0:
-            # Limpar cache para recarregar
-            cached_data['data'] = None
-            
-            return jsonify({
-                'success': True,
-                'message': f'Dados atualizados com sucesso! {len(data)} registros',
-                'records_count': len(data),
-                'timestamp': datetime.now().isoformat()
-            })
-        else:
-            return jsonify({
-                'success': False,
-                'message': 'Falha na atualização - REDCap não disponível (precisa VPN)'
-            })
-            
-    except Exception as e:
-        return jsonify({
-            'success': False,
-            'error': str(e),
-            'message': 'Erro na atualização - verifique conexão VPN'
-        })
-
-@app.route('/csv-status')
-def csv_status_page():
-    """Página de status do sistema CSV"""
-    try:
-        status = csv_manager.get_data_status()
-        metadata = csv_manager.get_metadata()
-        
-        return render_template('csv_status.html', 
-                             status=status, 
-                             metadata=metadata,
-                             success=True)
-    except Exception as e:
-        return render_template('csv_status.html', 
-                             status={}, 
-                             metadata={},
-                             success=False,
-                             error=str(e))
 
 @app.route('/analytics')
 def analytics():
@@ -352,8 +309,11 @@ def analytics():
         data = get_cached_data()
         processor = DataProcessor(data)
         
-        # Análises avançadas sem metadados
-        advanced_analytics = processor.get_advanced_analytics(None)
+        # Buscar metadados
+        metadata = redcap.get_metadata() if redcap else None
+        
+        # Análises avançadas
+        advanced_analytics = processor.get_advanced_analytics(metadata)
         
         return render_template('analytics.html', 
                              analytics=advanced_analytics,
@@ -373,7 +333,7 @@ def instruments():
     try:
         data = get_cached_data()
         processor = DataProcessor(data)
-        metadata = None  # CSV não precisa de metadados
+        metadata = redcap.get_metadata() if redcap else None
         
         advanced_analytics = processor.get_advanced_analytics(metadata)
         instruments_data = advanced_analytics.get('by_instrument', {})
@@ -395,7 +355,7 @@ def groups():
     try:
         data = get_cached_data()
         processor = DataProcessor(data)
-        metadata = None  # CSV não precisa de metadados
+        metadata = redcap.get_metadata() if redcap else None
         
         advanced_analytics = processor.get_advanced_analytics(metadata)
         groups_data = advanced_analytics.get('by_group', {})
@@ -462,7 +422,7 @@ def patterns():
     try:
         data = get_cached_data()
         processor = DataProcessor(data)
-        metadata = None  # CSV não precisa de metadados
+        metadata = redcap.get_metadata() if redcap else None
         
         advanced_analytics = processor.get_advanced_analytics(metadata)
         patterns_data = advanced_analytics.get('patterns', {})
@@ -485,7 +445,7 @@ def patterns():
 def longitudinal_analysis():
     try:
         print("🔄 Iniciando análise longitudinal...")
-        data = get_cached_data()
+        data = redcap.get_records()
         processor = DataProcessor(data)
         
         # Análises temporais
@@ -515,7 +475,7 @@ def longitudinal_analysis():
 def clinical_alerts():
     try:
         print("🚨 Iniciando análise de alertas clínicos...")
-        data = get_cached_data()  # Usar CSV em vez de REDCap
+        data = redcap.get_records()
         processor = DataProcessor(data)
         
         # Sistema de alertas
@@ -545,7 +505,7 @@ def clinical_alerts():
 def medication_adherence():
     try:
         print("💊 Iniciando análise de adesão medicamentosa...")
-        data = get_cached_data()
+        data = redcap.get_records()
         processor = DataProcessor(data)
         
         # Análises de adesão
@@ -575,7 +535,7 @@ def medication_adherence():
 def sleep_analysis():
     try:
         print("😴 Iniciando análise do sono...")
-        data = get_cached_data()
+        data = redcap.get_records()
         processor = DataProcessor(data)
         
         # Análises do sono - FUNÇÕES NOVAS E INDEPENDENTES
@@ -605,10 +565,10 @@ def sleep_analysis():
 def healthcare_utilization():
     """Página de análise de utilização de serviços de saúde"""
     try:
-        # Obter dados do CSV
-        df = get_cached_data()
-        if not df or df.empty:
-            raise Exception("Não foi possível obter dados do CSV")
+        # Obter dados do REDCap
+        df = redcap.get_records()
+        if not df:
+            raise Exception("Não foi possível obter dados do REDCap")
         
         # Inicializar processador de dados
         processor = DataProcessor(df)
@@ -642,10 +602,10 @@ def healthcare_utilization():
 def caregiver_analysis():
     """Página de análise de cuidadores"""
     try:
-        # Obter dados do CSV
-        df = get_cached_data()
-        if not df or df.empty:
-            raise Exception("Não foi possível obter dados do CSV")
+        # Obter dados do REDCap
+        df = redcap.get_records()
+        if not df:
+            raise Exception("Não foi possível obter dados do REDCap")
         
         # Inicializar processador de dados
         processor = DataProcessor(df)
@@ -747,6 +707,36 @@ def data_quality_analysis():
                              success=False,
                              error=str(e))
 
+@app.route('/export-to-static')
+def export_to_static():
+    """Endpoint para exportar dados REDCap para uso estático"""
+    try:
+        if redcap.test_connection():
+            data = redcap.get_records()
+            success = static_provider.export_current_data_to_static(data)
+            
+            if success:
+                return jsonify({
+                    'success': True,
+                    'message': f'Dados exportados com sucesso! {len(data)} registros salvos.',
+                    'records_count': len(data)
+                })
+            else:
+                return jsonify({
+                    'success': False,
+                    'message': 'Erro ao salvar dados estáticos'
+                })
+        else:
+            return jsonify({
+                'success': False,
+                'message': 'REDCap não disponível para exportação'
+            })
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'message': f'Erro na exportação: {str(e)}'
+        })
+
 @app.errorhandler(404)
 def not_found(error):
     return render_template('error.html', error='Página não encontrada'), 404
@@ -756,22 +746,22 @@ def server_error(error):
     return render_template('error.html', error='Erro interno do servidor'), 500
 
 if __name__ == '__main__':
-    print("🏥 RM4Health Dashboard com Sistema CSV")
-    print("� Dados via CSV + Atualização VPN")
+    print("🏥 Iniciando RM4Health Dashboard...")
+    print(f"🔗 URL da API: {Config.REDCAP_URL}")
+    print(f"🎯 Token: {Config.REDCAP_TOKEN[:10]}...")
+    print("🚀 Testando conexão...")
     
-    # Verificar status do CSV
-    status = csv_manager.get_data_status()
-    if status['csv_exists']:
-        print(f"✅ CSV encontrado: {status['records_count']} registros, {status['csv_age_hours']:.1f}h de idade")
+    # Teste inicial
+    if redcap.test_connection():
+        project_info = redcap.get_project_info()
+        print(f"✅ Conexão testada! Projeto: {project_info.get('project_title', 'RM4Health')}")
+        print("✅ Conexão OK! Iniciando servidor...")
     else:
-        print("❌ CSV não encontrado - será criado na primeira execução")
+        print("❌ Falha na conexão! Verifique as credenciais.")
+        print("🔄 Iniciando servidor mesmo assim...")
     
-    if status['redcap_available']:
-        print("✅ VPN conectada - pode atualizar dados!")
-    else:
-        print("⚠️ Sem VPN - usando dados CSV existentes")
+    # Configuração para produção
+    port = int(os.environ.get('PORT', 5000))
+    debug = os.environ.get('FLASK_ENV') == 'development'
     
-    print("� Iniciando servidor...")
-    print("📋 Acesse /csv-status para gerenciar dados")
-    
-    app.run(debug=True, host='0.0.0.0', port=5000)
+    app.run(debug=debug, host='0.0.0.0', port=port)

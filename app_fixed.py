@@ -373,7 +373,7 @@ def instruments():
     try:
         data = get_cached_data()
         processor = DataProcessor(data)
-        metadata = None  # CSV não precisa de metadados
+        metadata = None
         
         advanced_analytics = processor.get_advanced_analytics(metadata)
         instruments_data = advanced_analytics.get('by_instrument', {})
@@ -395,7 +395,7 @@ def groups():
     try:
         data = get_cached_data()
         processor = DataProcessor(data)
-        metadata = None  # CSV não precisa de metadados
+        metadata = None
         
         advanced_analytics = processor.get_advanced_analytics(metadata)
         groups_data = advanced_analytics.get('by_group', {})
@@ -462,7 +462,7 @@ def patterns():
     try:
         data = get_cached_data()
         processor = DataProcessor(data)
-        metadata = None  # CSV não precisa de metadados
+        metadata = None
         
         advanced_analytics = processor.get_advanced_analytics(metadata)
         patterns_data = advanced_analytics.get('patterns', {})
@@ -515,7 +515,7 @@ def longitudinal_analysis():
 def clinical_alerts():
     try:
         print("🚨 Iniciando análise de alertas clínicos...")
-        data = get_cached_data()  # Usar CSV em vez de REDCap
+        data = get_cached_data()
         processor = DataProcessor(data)
         
         # Sistema de alertas
@@ -605,10 +605,10 @@ def sleep_analysis():
 def healthcare_utilization():
     """Página de análise de utilização de serviços de saúde"""
     try:
-        # Obter dados do CSV
+        # Obter dados do REDCap
         df = get_cached_data()
-        if not df or df.empty:
-            raise Exception("Não foi possível obter dados do CSV")
+        if not df:
+            raise Exception("Não foi possível obter dados do REDCap")
         
         # Inicializar processador de dados
         processor = DataProcessor(df)
@@ -642,10 +642,10 @@ def healthcare_utilization():
 def caregiver_analysis():
     """Página de análise de cuidadores"""
     try:
-        # Obter dados do CSV
+        # Obter dados do REDCap
         df = get_cached_data()
-        if not df or df.empty:
-            raise Exception("Não foi possível obter dados do CSV")
+        if not df:
+            raise Exception("Não foi possível obter dados do REDCap")
         
         # Inicializar processador de dados
         processor = DataProcessor(df)
@@ -756,22 +756,16 @@ def server_error(error):
     return render_template('error.html', error='Erro interno do servidor'), 500
 
 if __name__ == '__main__':
-    print("🏥 RM4Health Dashboard com Sistema CSV")
-    print("� Dados via CSV + Atualização VPN")
+    print("🏥 Iniciando RM4Health Dashboard...")
+    print(f"🔗 URL da API: {Config.REDCAP_URL}")
+    print(f"🎯 Token: {Config.REDCAP_TOKEN[:10]}...")
+    print("🚀 Testando conexão...")
     
-    # Verificar status do CSV
-    status = csv_manager.get_data_status()
-    if status['csv_exists']:
-        print(f"✅ CSV encontrado: {status['records_count']} registros, {status['csv_age_hours']:.1f}h de idade")
+    # Teste inicial
+    if redcap.test_connection():
+        print("✅ Conexão OK! Iniciando servidor...")
+        app.run(debug=True, host='0.0.0.0', port=5000)
     else:
-        print("❌ CSV não encontrado - será criado na primeira execução")
-    
-    if status['redcap_available']:
-        print("✅ VPN conectada - pode atualizar dados!")
-    else:
-        print("⚠️ Sem VPN - usando dados CSV existentes")
-    
-    print("� Iniciando servidor...")
-    print("📋 Acesse /csv-status para gerenciar dados")
-    
-    app.run(debug=True, host='0.0.0.0', port=5000)
+        print("❌ Falha na conexão! Verifique as credenciais.")
+        print("🔄 Iniciando servidor mesmo assim...")
+        app.run(debug=True, host='0.0.0.0', port=5000)
