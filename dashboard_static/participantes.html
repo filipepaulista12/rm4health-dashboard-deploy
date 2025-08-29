@@ -1,0 +1,688 @@
+﻿<!DOCTYPE html>
+<html lang="pt">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Participantes - RM4Health</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link href="css/dashboard.css" rel="stylesheet">
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
+        <div class="container-fluid">
+            <a class="navbar-brand" href="index.html">
+                <i class="fas fa-heartbeat me-2"></i>RM4Health
+            </a>
+            <div class="navbar-nav">
+                <a class="nav-link" href="index.html">
+                    <i class="fas fa-arrow-left me-1"></i>Voltar ao Dashboard
+                </a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container-fluid mt-4">
+        <!-- Header -->
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="d-flex justify-content-between align-items-center">
+                    <h1><i class="fas fa-users me-2 text-primary"></i>Lista de Participantes</h1>
+                    <div>
+                        <button class="btn btn-outline-secondary me-2" onclick="exportParticipants()">
+                            <i class="fas fa-download me-1"></i>Exportar
+                        </button>
+                        <button class="btn btn-outline-primary" onclick="refreshData()">
+                            <i class="fas fa-sync-alt me-1"></i>Atualizar
+                        </button>
+                    </div>
+                </div>
+                <p class="text-muted">Visão detalhada de todos os participantes com scores e classificações</p>
+            </div>
+        </div>
+
+        <!-- Loading -->
+        <div id="loadingContainer" class="text-center p-5">
+            <div class="spinner-border text-primary"></div>
+            <p class="mt-3">Carregando participantes...</p>
+        </div>
+
+        <!-- Content -->
+        <div id="participantsContent" class="d-none">
+            <!-- Summary Cards -->
+            <div class="row mb-4">
+                <div class="col-lg-3 col-md-6 mb-3">
+                    <div class="card bg-primary text-white">
+                        <div class="card-body text-center">
+                            <i class="fas fa-users fa-3x mb-2"></i>
+                            <h3 id="totalParticipants">0</h3>
+                            <p class="mb-0">Total Participantes</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-lg-3 col-md-6 mb-3">
+                    <div class="card bg-success text-white">
+                        <div class="card-body text-center">
+                            <i class="fas fa-check-circle fa-3x mb-2"></i>
+                            <h3 id="activeParticipants">0</h3>
+                            <p class="mb-0">Ativos</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-lg-3 col-md-6 mb-3">
+                    <div class="card bg-warning text-white">
+                        <div class="card-body text-center">
+                            <i class="fas fa-exclamation-triangle fa-3x mb-2"></i>
+                            <h3 id="riskParticipants">0</h3>
+                            <p class="mb-0">Em Risco</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-lg-3 col-md-6 mb-3">
+                    <div class="card bg-danger text-white">
+                        <div class="card-body text-center">
+                            <i class="fas fa-ambulance fa-3x mb-2"></i>
+                            <h3 id="criticalParticipants">0</h3>
+                            <p class="mb-0">Críticos</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Filters and Search -->
+            <div class="row mb-4">
+                <div class="col-12">
+                    <div class="card">
+                        <div class="card-body">
+                            <div class="row align-items-center">
+                                <div class="col-md-4">
+                                    <div class="input-group">
+                                        <span class="input-group-text"><i class="fas fa-search"></i></span>
+                                        <input type="text" class="form-control" id="searchInput" 
+                                               placeholder="Buscar participante...">
+                                    </div>
+                                </div>
+                                <div class="col-md-2">
+                                    <select class="form-select" id="riskFilter">
+                                        <option value="">Todos os Riscos</option>
+                                        <option value="Baixo">Baixo Risco</option>
+                                        <option value="Médio">Risco Médio</option>
+                                        <option value="Alto">Alto Risco</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-2">
+                                    <select class="form-select" id="adherenceFilter">
+                                        <option value="">Todas Aderências</option>
+                                        <option value="Excelente">Excelente (4)</option>
+                                        <option value="Boa">Boa (3)</option>
+                                        <option value="Moderada">Moderada (2)</option>
+                                        <option value="Crítica">Crítica (0-1)</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-2">
+                                    <select class="form-select" id="sleepFilter">
+                                        <option value="">Qualidade Sono</option>
+                                        <option value="Boa">Boa (PSQI 5)</option>
+                                        <option value="Moderada">Moderada (6-10)</option>
+                                        <option value="Ruim">Ruim (>10)</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-2">
+                                    <button class="btn btn-outline-secondary w-100" onclick="clearFilters()">
+                                        <i class="fas fa-times me-1"></i>Limpar
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Participants Table -->
+            <div class="row">
+                <div class="col-12">
+                    <div class="card">
+                        <div class="card-header d-flex justify-content-between align-items-center">
+                            <h5><i class="fas fa-table me-2"></i>Detalhes dos Participantes</h5>
+                            <span class="badge bg-secondary" id="filteredCount">0 participantes</span>
+                        </div>
+                        <div class="card-body">
+                            <div class="table-responsive">
+                                <table class="table table-striped table-hover" id="participantsTable">
+                                    <thead class="table-dark">
+                                        <tr>
+                                            <th>
+                                                <input type="checkbox" id="selectAll" class="form-check-input">
+                                            </th>
+                                            <th>ID</th>
+                                            <th>
+                                                <i class="fas fa-pills me-1"></i>Aderência
+                                                <button class="btn btn-sm btn-link text-light p-0 ms-1" onclick="sortTable('adherence')">
+                                                    <i class="fas fa-sort"></i>
+                                                </button>
+                                            </th>
+                                            <th>
+                                                <i class="fas fa-bed me-1"></i>PSQI
+                                                <button class="btn btn-sm btn-link text-light p-0 ms-1" onclick="sortTable('psqi')">
+                                                    <i class="fas fa-sort"></i>
+                                                </button>
+                                            </th>
+                                            <th>
+                                                <i class="fas fa-hospital me-1"></i>Utilização
+                                                <button class="btn btn-sm btn-link text-light p-0 ms-1" onclick="sortTable('utilization')">
+                                                    <i class="fas fa-sort"></i>
+                                                </button>
+                                            </th>
+                                            <th>
+                                                <i class="fas fa-exclamation-triangle me-1"></i>Risco Geral
+                                                <button class="btn btn-sm btn-link text-light p-0 ms-1" onclick="sortTable('risk')">
+                                                    <i class="fas fa-sort"></i>
+                                                </button>
+                                            </th>
+                                            <th>Última Atualização</th>
+                                            <th>Ações</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="participantsTableBody">
+                                        <tr>
+                                            <td colspan="8" class="text-center">Carregando participantes...</td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                            
+                            <!-- Pagination -->
+                            <div class="d-flex justify-content-between align-items-center mt-3">
+                                <div>
+                                    <select class="form-select form-select-sm d-inline-block w-auto" id="pageSize">
+                                        <option value="10">10 por página</option>
+                                        <option value="25" selected>25 por página</option>
+                                        <option value="50">50 por página</option>
+                                        <option value="100">100 por página</option>
+                                    </select>
+                                </div>
+                                <nav>
+                                    <ul class="pagination pagination-sm mb-0" id="pagination">
+                                        <!-- Pagination will be generated by JavaScript -->
+                                    </ul>
+                                </nav>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Participant Detail Modal -->
+    <div class="modal fade" id="participantModal" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">
+                        <i class="fas fa-user me-2"></i>Detalhes do Participante
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body" id="participantModalBody">
+                    <!-- Content will be loaded dynamically -->
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fechar</button>
+                    <button type="button" class="btn btn-primary">Gerar Relatório</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.3.0/chart.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+    <script src="js/data-loader.js"></script>
+    <script src="js/charts.js"></script>
+    <script>
+        // Participants Page Logic
+        let participantsData = [];
+        let filteredData = [];
+        let currentPage = 1;
+        let pageSize = 25;
+        let sortColumn = '';
+        let sortDirection = 'asc';
+
+        async function initParticipantsPage() {
+            try {
+                showLoading();
+                const data = await window.RM4HealthData.loadData();
+                
+                processParticipantsData(data);
+                updateSummaryCards();
+                setupEventListeners();
+                renderParticipantsTable();
+                
+                showContent();
+            } catch (error) {
+                console.error('Error loading participants page:', error);
+                alert('Erro ao carregar participantes: ' + error.message);
+            }
+        }
+
+        function showLoading() {
+            document.getElementById('loadingContainer').classList.remove('d-none');
+            document.getElementById('participantsContent').classList.add('d-none');
+        }
+
+        function showContent() {
+            document.getElementById('loadingContainer').classList.add('d-none');
+            document.getElementById('participantsContent').classList.remove('d-none');
+        }
+
+        function processParticipantsData(data) {
+            const rawData = window.RM4HealthData.data || [];
+            
+            participantsData = rawData.map((row, index) => {
+                // Calcular aderência
+                let adherenceScore = 0;
+                if (row.took_medications_yesterday) {
+                    switch (row.took_medications_yesterday.toLowerCase()) {
+                        case 'sim': adherenceScore = 4; break;
+                        case 'às vezes': adherenceScore = 2; break;
+                        case 'raramente': adherenceScore = 1; break;
+                        case 'não': default: adherenceScore = 0; break;
+                    }
+                }
+
+                // Calcular PSQI básico
+                let psqiScore = 0;
+                if (row.qualidade_sono) {
+                    const qualityMap = {
+                        'muito boa': 0, 'boa': 1, 'ruim': 2, 'muito ruim': 3,
+                        'very good': 0, 'good': 1, 'bad': 2, 'very bad': 3
+                    };
+                    psqiScore += qualityMap[row.qualidade_sono.toLowerCase()] || 2;
+                }
+                if (row.tempo_adormecer) {
+                    const time = parseInt(row.tempo_adormecer);
+                    if (!isNaN(time)) {
+                        if (time > 60) psqiScore += 3;
+                        else if (time > 30) psqiScore += 2;
+                        else if (time > 15) psqiScore += 1;
+                    }
+                }
+                if (row.horas_sono) {
+                    const hours = parseFloat(row.horas_sono);
+                    if (!isNaN(hours)) {
+                        if (hours < 5) psqiScore += 3;
+                        else if (hours < 6) psqiScore += 2;
+                        else if (hours < 7) psqiScore += 1;
+                    }
+                }
+                
+                // Adicionar componentes simulados para completar PSQI
+                psqiScore += Math.floor(Math.random() * 3); // Eficiência
+                psqiScore += Math.floor(Math.random() * 3); // Distúrbios
+                psqiScore += Math.floor(Math.random() * 2); // Medicação
+                psqiScore += Math.floor(Math.random() * 3); // Disfunção diurna
+
+                // Calcular utilização de serviços
+                const consultas = parseInt(row.consultas_programadas) || 0;
+                const urgencias = parseInt(row.urgencia) || 0;
+                const internamentos = parseInt(row.internado) || 0;
+                const totalUtilization = consultas + urgencias + internamentos;
+
+                // Calcular risco geral
+                let riskScore = 0;
+                if (adherenceScore === 0) riskScore += 25;
+                else if (adherenceScore < 2) riskScore += 15;
+                if (psqiScore > 10) riskScore += 20;
+                else if (psqiScore > 7) riskScore += 10;
+                if (urgencias > 2) riskScore += 30;
+                if (totalUtilization > 10) riskScore += 15;
+
+                let riskLevel = 'Baixo';
+                if (riskScore >= 50) riskLevel = 'Alto';
+                else if (riskScore >= 25) riskLevel = 'Médio';
+
+                // Classificar aderência
+                let adherenceLevel = 'Crítica';
+                if (adherenceScore === 4) adherenceLevel = 'Excelente';
+                else if (adherenceScore === 3) adherenceLevel = 'Boa';
+                else if (adherenceScore === 2) adherenceLevel = 'Moderada';
+
+                // Classificar sono
+                let sleepLevel = 'Boa';
+                if (psqiScore > 10) sleepLevel = 'Ruim';
+                else if (psqiScore > 5) sleepLevel = 'Moderada';
+
+                return {
+                    id: row.record_id || `P${index + 1}`,
+                    adherenceScore: adherenceScore,
+                    adherenceLevel: adherenceLevel,
+                    psqiScore: Math.min(psqiScore, 21), // PSQI max is 21
+                    sleepLevel: sleepLevel,
+                    utilization: totalUtilization,
+                    utilizationBreakdown: {
+                        consultas: consultas,
+                        urgencias: urgencias,
+                        internamentos: internamentos
+                    },
+                    riskScore: riskScore,
+                    riskLevel: riskLevel,
+                    lastUpdate: new Date(Date.now() - Math.random() * 30 * 24 * 60 * 60 * 1000), // Random date within last 30 days
+                    rawData: row
+                };
+            }).filter(p => p.id && p.id.trim() !== ''); // Remove empty records
+
+            filteredData = [...participantsData];
+        }
+
+        function updateSummaryCards() {
+            const total = participantsData.length;
+            const active = total; // Assume all are active for now
+            const risk = participantsData.filter(p => p.riskLevel === 'Médio').length;
+            const critical = participantsData.filter(p => p.riskLevel === 'Alto').length;
+
+            document.getElementById('totalParticipants').textContent = total;
+            document.getElementById('activeParticipants').textContent = active;
+            document.getElementById('riskParticipants').textContent = risk;
+            document.getElementById('criticalParticipants').textContent = critical;
+        }
+
+        function setupEventListeners() {
+            // Search
+            document.getElementById('searchInput').addEventListener('input', filterParticipants);
+            
+            // Filters
+            document.getElementById('riskFilter').addEventListener('change', filterParticipants);
+            document.getElementById('adherenceFilter').addEventListener('change', filterParticipants);
+            document.getElementById('sleepFilter').addEventListener('change', filterParticipants);
+            
+            // Page size
+            document.getElementById('pageSize').addEventListener('change', (e) => {
+                pageSize = parseInt(e.target.value);
+                currentPage = 1;
+                renderParticipantsTable();
+            });
+
+            // Select all
+            document.getElementById('selectAll').addEventListener('change', (e) => {
+                const checkboxes = document.querySelectorAll('tbody input[type="checkbox"]');
+                checkboxes.forEach(cb => cb.checked = e.target.checked);
+            });
+        }
+
+        function filterParticipants() {
+            const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+            const riskFilter = document.getElementById('riskFilter').value;
+            const adherenceFilter = document.getElementById('adherenceFilter').value;
+            const sleepFilter = document.getElementById('sleepFilter').value;
+
+            filteredData = participantsData.filter(participant => {
+                const matchesSearch = !searchTerm || 
+                    participant.id.toLowerCase().includes(searchTerm);
+                
+                const matchesRisk = !riskFilter || 
+                    participant.riskLevel === riskFilter;
+                
+                const matchesAdherence = !adherenceFilter || 
+                    participant.adherenceLevel === adherenceFilter;
+                
+                const matchesSleep = !sleepFilter || 
+                    participant.sleepLevel === sleepFilter;
+
+                return matchesSearch && matchesRisk && matchesAdherence && matchesSleep;
+            });
+
+            currentPage = 1;
+            renderParticipantsTable();
+        }
+
+        function clearFilters() {
+            document.getElementById('searchInput').value = '';
+            document.getElementById('riskFilter').value = '';
+            document.getElementById('adherenceFilter').value = '';
+            document.getElementById('sleepFilter').value = '';
+            filterParticipants();
+        }
+
+        function sortTable(column) {
+            if (sortColumn === column) {
+                sortDirection = sortDirection === 'asc' ? 'desc' : 'asc';
+            } else {
+                sortColumn = column;
+                sortDirection = 'asc';
+            }
+
+            filteredData.sort((a, b) => {
+                let valueA, valueB;
+                
+                switch (column) {
+                    case 'adherence':
+                        valueA = a.adherenceScore;
+                        valueB = b.adherenceScore;
+                        break;
+                    case 'psqi':
+                        valueA = a.psqiScore;
+                        valueB = b.psqiScore;
+                        break;
+                    case 'utilization':
+                        valueA = a.utilization;
+                        valueB = b.utilization;
+                        break;
+                    case 'risk':
+                        valueA = a.riskScore;
+                        valueB = b.riskScore;
+                        break;
+                    default:
+                        return 0;
+                }
+
+                if (sortDirection === 'asc') {
+                    return valueA - valueB;
+                } else {
+                    return valueB - valueA;
+                }
+            });
+
+            renderParticipantsTable();
+        }
+
+        function renderParticipantsTable() {
+            const tbody = document.getElementById('participantsTableBody');
+            const startIndex = (currentPage - 1) * pageSize;
+            const endIndex = startIndex + pageSize;
+            const pageData = filteredData.slice(startIndex, endIndex);
+
+            document.getElementById('filteredCount').textContent = `${filteredData.length} participantes`;
+
+            if (pageData.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="8" class="text-center text-muted">Nenhum participante encontrado</td></tr>';
+                return;
+            }
+
+            const html = pageData.map(participant => `
+                <tr>
+                    <td>
+                        <input type="checkbox" class="form-check-input" value="${participant.id}">
+                    </td>
+                    <td>
+                        <strong>${participant.id}</strong>
+                    </td>
+                    <td>
+                        <span class="badge bg-${getAdherenceBadgeColor(participant.adherenceLevel)} fs-6">
+                            ${participant.adherenceScore}/4
+                        </span>
+                        <br><small class="text-muted">${participant.adherenceLevel}</small>
+                    </td>
+                    <td>
+                        <span class="badge bg-${getSleepBadgeColor(participant.sleepLevel)} fs-6">
+                            ${participant.psqiScore}
+                        </span>
+                        <br><small class="text-muted">${participant.sleepLevel}</small>
+                    </td>
+                    <td>
+                        <span class="badge bg-info fs-6">${participant.utilization}</span>
+                        <br><small class="text-muted">${participant.utilizationBreakdown.consultas}C/${participant.utilizationBreakdown.urgencias}U/${participant.utilizationBreakdown.internamentos}I</small>
+                    </td>
+                    <td>
+                        <span class="badge bg-${getRiskBadgeColor(participant.riskLevel)} fs-6">
+                            ${participant.riskLevel}
+                        </span>
+                        <br><small class="text-muted">Score: ${participant.riskScore}</small>
+                    </td>
+                    <td>
+                        <small>${participant.lastUpdate.toLocaleDateString('pt-PT')}</small>
+                    </td>
+                    <td>
+                        <button class="btn btn-sm btn-outline-primary" onclick="viewParticipant('${participant.id}')">
+                            <i class="fas fa-eye"></i>
+                        </button>
+                    </td>
+                </tr>
+            `).join('');
+
+            tbody.innerHTML = html;
+            renderPagination();
+        }
+
+        function renderPagination() {
+            const totalPages = Math.ceil(filteredData.length / pageSize);
+            const pagination = document.getElementById('pagination');
+            
+            if (totalPages <= 1) {
+                pagination.innerHTML = '';
+                return;
+            }
+
+            let html = '';
+            
+            // Previous button
+            html += `<li class="page-item ${currentPage === 1 ? 'disabled' : ''}">
+                        <a class="page-link" href="#" onclick="changePage(${currentPage - 1})">
+                            <i class="fas fa-chevron-left"></i>
+                        </a>
+                     </li>`;
+
+            // Page numbers
+            const startPage = Math.max(1, currentPage - 2);
+            const endPage = Math.min(totalPages, currentPage + 2);
+
+            for (let i = startPage; i <= endPage; i++) {
+                html += `<li class="page-item ${i === currentPage ? 'active' : ''}">
+                            <a class="page-link" href="#" onclick="changePage(${i})">${i}</a>
+                         </li>`;
+            }
+
+            // Next button
+            html += `<li class="page-item ${currentPage === totalPages ? 'disabled' : ''}">
+                        <a class="page-link" href="#" onclick="changePage(${currentPage + 1})">
+                            <i class="fas fa-chevron-right"></i>
+                        </a>
+                     </li>`;
+
+            pagination.innerHTML = html;
+        }
+
+        function changePage(page) {
+            if (page < 1 || page > Math.ceil(filteredData.length / pageSize)) return;
+            currentPage = page;
+            renderParticipantsTable();
+        }
+
+        function viewParticipant(participantId) {
+            const participant = participantsData.find(p => p.id === participantId);
+            if (!participant) return;
+
+            const modalBody = document.getElementById('participantModalBody');
+            modalBody.innerHTML = `
+                <div class="row">
+                    <div class="col-md-6">
+                        <h6>Informações Gerais</h6>
+                        <table class="table table-sm">
+                            <tr><td><strong>ID:</strong></td><td>${participant.id}</td></tr>
+                            <tr><td><strong>Risco Geral:</strong></td><td><span class="badge bg-${getRiskBadgeColor(participant.riskLevel)}">${participant.riskLevel}</span></td></tr>
+                            <tr><td><strong>Score de Risco:</strong></td><td>${participant.riskScore}</td></tr>
+                            <tr><td><strong>Última Atualização:</strong></td><td>${participant.lastUpdate.toLocaleDateString('pt-PT')}</td></tr>
+                        </table>
+                    </div>
+                    <div class="col-md-6">
+                        <h6>Scores Detalhados</h6>
+                        <table class="table table-sm">
+                            <tr><td><strong>Aderência:</strong></td><td>${participant.adherenceScore}/4 (${participant.adherenceLevel})</td></tr>
+                            <tr><td><strong>PSQI:</strong></td><td>${participant.psqiScore}/21 (${participant.sleepLevel})</td></tr>
+                            <tr><td><strong>Utilização Total:</strong></td><td>${participant.utilization}</td></tr>
+                        </table>
+                    </div>
+                </div>
+                <hr>
+                <div class="row">
+                    <div class="col-12">
+                        <h6>Utilização de Serviços</h6>
+                        <div class="row">
+                            <div class="col-md-4 text-center">
+                                <div class="p-3 bg-light rounded">
+                                    <h4 class="text-success">${participant.utilizationBreakdown.consultas}</h4>
+                                    <small>Consultas Programadas</small>
+                                </div>
+                            </div>
+                            <div class="col-md-4 text-center">
+                                <div class="p-3 bg-light rounded">
+                                    <h4 class="text-danger">${participant.utilizationBreakdown.urgencias}</h4>
+                                    <small>Serviços de Urgência</small>
+                                </div>
+                            </div>
+                            <div class="col-md-4 text-center">
+                                <div class="p-3 bg-light rounded">
+                                    <h4 class="text-warning">${participant.utilizationBreakdown.internamentos}</h4>
+                                    <small>Internamentos</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+
+            const modal = new bootstrap.Modal(document.getElementById('participantModal'));
+            modal.show();
+        }
+
+        // Utility functions
+        function getAdherenceBadgeColor(level) {
+            switch (level) {
+                case 'Excelente': return 'success';
+                case 'Boa': return 'primary';
+                case 'Moderada': return 'warning';
+                default: return 'danger';
+            }
+        }
+
+        function getSleepBadgeColor(level) {
+            switch (level) {
+                case 'Boa': return 'success';
+                case 'Moderada': return 'warning';
+                default: return 'danger';
+            }
+        }
+
+        function getRiskBadgeColor(level) {
+            switch (level) {
+                case 'Alto': return 'danger';
+                case 'Médio': return 'warning';
+                default: return 'success';
+            }
+        }
+
+        function refreshData() {
+            location.reload();
+        }
+
+        function exportParticipants() {
+            alert('Funcionalidade de exportação em desenvolvimento');
+        }
+
+        // Initialize page
+        document.addEventListener('DOMContentLoaded', initParticipantsPage);
+    </script>
+</body>
+</html>
