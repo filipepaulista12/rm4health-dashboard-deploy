@@ -11,8 +11,8 @@
 
 ### **Build & Deploy**:
 ```bash
-# Build Command:
-pip install -r requirements_production.txt
+# Build Command (CORRIGIDO):
+pip install --upgrade pip setuptools wheel && pip install -r requirements_production.txt
 
 # Start Command:
 python production_server.py
