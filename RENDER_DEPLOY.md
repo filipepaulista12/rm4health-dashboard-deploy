@@ -1,43 +1,86 @@
-# Render.com Deploy Configuration
+# 🚀 DEPLOY RENDER.COM - RM4Health Dashboard
 
-## ⚙️ Configurações do Render
+## Status Atual: ✅ PRONTO PARA DEPLOY
 
-### **Tipo de Serviço**: Web Service
+### Versão atual: **Ultra-Minimal** - Sem pandas/numpy
+- ✅ Arquivo de configuração incluído (`local_data_config.json`)
+- ✅ Cliente robusto com fallback automático
+- ✅ Requirements mínimos (apenas Flask + Waitress)
+- ✅ Testado localmente em modo produção
 
-### **Configurações Básicas**:
-- **Repository**: `filipepaulista12/rm4health-dashboard-deploy`
-- **Branch**: `deploy-online-compartilhado`
-- **Runtime**: `Python 3.11`
+---
 
-### **Build & Deploy**:
-```bash
-# Build Command (CORRIGIDO):
-pip install --upgrade pip setuptools wheel && pip install -r requirements_production.txt
+## 📋 Checklist Final
 
-# Start Command:
-python production_server.py
+### ✅ Arquivos Críticos Incluídos:
+- `local_data_config.json` - Configuração essencial
+- `production_server.py` - Servidor Waitress otimizado  
+- `local_redcap_client_simple.py` - Cliente sem pandas
+- `requirements.txt` - Dependencies ultra-mínimas
+
+### ✅ Configurações do Render:
+```
+Repositório: filipepaulista12/rm4health-dashboard-deploy
+Branch: deploy-online-compartilhado
+Build Command: pip install -r requirements.txt
+Start Command: python production_server.py
+Python Version: 3.11
 ```
 
-### **Variáveis de Ambiente**:
-- `PORT`: (Render define automaticamente)
-- `HOST`: `0.0.0.0`
+---
 
-### **Configurações Avançadas**:
-- **Health Check Path**: `/`
-- **Auto-Deploy**: `Yes` (deploy automático em push)
+## 🔧 Correções Implementadas
 
-## 📋 Checklist de Deploy:
+### Problema Original:
+```
+FileNotFoundError: local_data_config.json não encontrado
+```
 
-- [✅] Código no GitHub (branch: deploy-online-compartilhado)
-- [✅] requirements_production.txt criado
-- [✅] production_server.py configurado
-- [✅] Dados locais incluídos
-- [✅] Procfile criado
-- [⏳] Deploy no Render.com
+### ✅ Solução:
+1. **Arquivo incluído**: `local_data_config.json` adicionado ao repo
+2. **Fallback robusto**: Cliente cria dados demo se arquivos faltarem
+3. **Requirements simplificados**: Apenas Flask + Waitress
+4. **Sem pandas/numpy**: Evita conflitos binários
 
-## 🌐 Após Deploy:
+---
 
-- URL será: `https://[seu-app-name].onrender.com`
-- Dashboard funcionará sem VPN
-- Dados estáticos (596 registros)
-- Todas análises funcionando
+## � Dados Disponíveis
+
+### Produção Real:
+- **596 registros** de pacientes reais
+- **254 campos** de dados clínicos
+- **Dados anonimizados** e seguros
+
+### Fallback Demo:
+- **10 registros** de demonstração
+- **Funcionalidade completa** preservada
+- **Interface idêntica**
+
+---
+
+## 🧪 Teste Local Passou
+```bash
+python test_deploy.py
+```
+```
+✅ App importado com sucesso!
+✅ 596 registros disponíveis
+✅ 254 campos de metadados
+🎯 A aplicação está pronta para deploy!
+```
+
+---
+
+## 🚀 DEPLOY AGORA
+
+### Render.com Settings:
+- **Repository**: `filipepaulista12/rm4health-dashboard-deploy`
+- **Branch**: `deploy-online-compartilhado`
+- **Build Command**: `pip install -r requirements.txt`
+- **Start Command**: `python production_server.py`
+- **Python Version**: `3.11`
+
+### Expected Result:
+- ✅ Build success 
+- ✅ Deploy success
+- ✅ Dashboard funcionando em: `https://seu-app.onrender.com`
