@@ -3,8 +3,12 @@
 Servidor de produção usando Waitress (Windows/Linux compatível)
 """
 from waitress import serve
-from app import app
 import os
+
+# Definir que estamos em produção
+os.environ['PRODUCTION'] = '1'
+
+from app import app
 
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))

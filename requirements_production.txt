@@ -1,9 +1,10 @@
-# Dependências mínimas e estáveis para produção
-flask>=2.2.0,<3.0.0
-plotly>=5.0.0,<6.0.0
-pandas>=2.0.0,<2.1.0
-requests>=2.25.0
-python-dotenv>=0.19.0
-waitress>=2.0.0
+# Versões compatíveis testadas - numpy/pandas compatibility fix
+flask==2.3.3
+plotly==5.15.0
+pandas==2.0.3
+numpy==1.24.4
+requests==2.31.0
+python-dotenv==1.0.0
+waitress==2.1.2
 setuptools>=60.0.0
 wheel>=0.37.0

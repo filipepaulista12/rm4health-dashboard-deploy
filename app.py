@@ -3,11 +3,23 @@ import plotly.graph_objs as go
 import plotly.utils
 import json
 from redcap_client import REDCapClient
-from local_redcap_client import LocalREDCapClient
-from data_processor import DataProcessor
 from config import Config
 import traceback
 from datetime import datetime
+import os
+
+# Import do cliente local baseado no ambiente
+if os.getenv('RENDER') or os.getenv('PRODUCTION'):
+    # Em produção, usar versão simples sem pandas
+    from local_redcap_client_simple import LocalREDCapClientSimple as LocalREDCapClient
+else:
+    # Em desenvolvimento, usar versão completa
+    try:
+        from local_redcap_client import LocalREDCapClient
+    except ImportError:
+        from local_redcap_client_simple import LocalREDCapClientSimple as LocalREDCapClient
+
+from data_processor import DataProcessor
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'rm4health_dashboard_secret_key'
