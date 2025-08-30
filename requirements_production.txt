@@ -1,0 +1,9 @@
+# Dependências para versão de produção
+flask==2.3.3
+gunicorn==21.2.0
+plotly==5.17.0
+pandas==2.1.1
+requests==2.31.0
+python-dotenv==1.0.0
+numpy==1.25.2
+waitress==2.1.2

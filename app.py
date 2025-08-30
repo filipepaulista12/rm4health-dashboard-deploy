@@ -3,6 +3,7 @@ import plotly.graph_objs as go
 import plotly.utils
 import json
 from redcap_client import REDCapClient
+from local_redcap_client import LocalREDCapClient
 from data_processor import DataProcessor
 from config import Config
 import traceback
@@ -11,8 +12,15 @@ from datetime import datetime
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'rm4health_dashboard_secret_key'
 
-# Inicializar cliente REDCap
-redcap = REDCapClient()
+# Inicializar cliente REDCap (local ou API)
+if Config.USE_LOCAL_DATA:
+    print("🔄 Inicializando cliente LOCAL...")
+    redcap = LocalREDCapClient()
+    print("✅ Cliente local inicializado")
+else:
+    print("🔄 Inicializando cliente API...")
+    redcap = REDCapClient()
+    print("✅ Cliente API inicializado")
 
 # Cache para dados (simples cache em memória)
 cached_data = {
