@@ -47,7 +47,9 @@ Thumbs.db
 
 # Application specific
 config_local.py
-*.json
+# Excluir dados sensíveis, mas manter arquivos de configuração necessários
+redcap_data_*.json
+!local_data_config.json
 !requirements.txt
 
 # Test files (optionally keep some)

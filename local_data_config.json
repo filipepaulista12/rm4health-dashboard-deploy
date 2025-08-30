@@ -1,0 +1,14 @@
+{
+  "last_extraction": "2025-08-30T10:49:39.645728",
+  "files": {
+    "json_file": "redcap_data_20250830_104939.json",
+    "raw_csv": "redcap_raw_20250830_104939.csv",
+    "labeled_csv": "redcap_labeled_20250830_104939.csv",
+    "metadata_csv": "redcap_metadata_20250830_104939.csv"
+  },
+  "stats": {
+    "total_records": 596,
+    "total_fields": 254,
+    "total_instruments": 0
+  }
+}
