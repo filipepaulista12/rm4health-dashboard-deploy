@@ -18,12 +18,21 @@ class DataProcessor:
                 'total_participants': 0,
                 'total_records': 0,
                 'total_variables': 0,
-                'completion_rate': 0
+                'total_grupo_a': 0,
+                'total_grupo_b': 0,
+                'total_grupo_c': 0,
+                'total_grupo_d': 0
             }
         
         # Conta participantes únicos baseado em participant_code (campo correto do RM4Health)
         unique_participants = set()
         all_fields = set()
+        
+        # Contadores por grupo
+        grupo_a_participants = set()
+        grupo_b_participants = set()
+        grupo_c_participants = set()
+        grupo_d_participants = set()
         
         for record in self.data:
             # Tenta diferentes campos de identificação de participante
@@ -35,25 +44,36 @@ class DataProcessor:
             
             if participant_id:
                 unique_participants.add(participant_id)
+                
+                # Classificar por grupos baseado no participant_group
+                group = record.get('participant_group', '')
+                if 'Grupo A' in str(group) or group == 'Grupo A':
+                    grupo_a_participants.add(participant_id)
+                elif 'Grupo B' in str(group) or group == 'Grupo B':
+                    grupo_b_participants.add(participant_id)
+                elif 'Grupo C' in str(group) or group == 'Grupo C':
+                    grupo_c_participants.add(participant_id)
+                elif 'Grupo D' in str(group) or group == 'Grupo D':
+                    grupo_d_participants.add(participant_id)
+            
             all_fields.update(record.keys())
         
-        # Calcula taxa de completude
+        # Estatísticas básicas sem completude (que é problemática devido a campos condicionais)
         total_fields = len(all_fields)
-        filled_fields = 0
-        total_possible = len(self.data) * total_fields
         
-        for record in self.data:
-            for field_name in all_fields:
-                if field_name in record and record[field_name] not in [None, '', 'NaN', '']:
-                    filled_fields += 1
-        
-        completion_rate = (filled_fields / total_possible * 100) if total_possible > 0 else 0
+        # RM4Health tem 11 formulários conhecidos (0-10 em algarismo romano)
+        total_instruments = 11
         
         stats = {
             'total_participants': len(unique_participants),
             'total_records': len(self.data),
             'total_variables': total_fields,
-            'completion_rate': round(completion_rate, 1)
+            'total_grupo_a': len(grupo_a_participants),
+            'total_grupo_b': len(grupo_b_participants), 
+            'total_grupo_c': len(grupo_c_participants),
+            'total_grupo_d': len(grupo_d_participants),
+            'total_instruments': total_instruments,
+            'total_raw_records': len(self.data)
         }
         
         return stats
@@ -131,6 +151,75 @@ class DataProcessor:
         return {
             'labels': [str(p[0]) for p in sorted_participants],
             'values': [p[1] for p in sorted_participants]
+        }
+    
+    def get_records_per_instrument(self):
+        """Analisa distribuição de registos por formulário baseado nos campos _complete"""
+        if not self.data:
+            return None
+        
+        # Procurar por todos os campos que terminam em '_complete'
+        complete_fields = []
+        if self.data:
+            sample_record = self.data[0]
+            for field_name in sample_record.keys():
+                if field_name.endswith('_complete'):
+                    complete_fields.append(field_name)
+        
+        if not complete_fields:
+            return None
+        
+        # Contar registos para cada formulário baseado no campo _complete
+        instrument_counts = {}
+        
+        for complete_field in complete_fields:
+            # Remove '_complete' do nome para obter o nome do instrumento
+            instrument_name = complete_field.replace('_complete', '')
+            
+            # Conta quantos registos têm esse campo preenchido (qualquer valor que não seja vazio)
+            count = 0
+            for record in self.data:
+                if complete_field in record and record[complete_field] is not None and str(record[complete_field]).strip() != '':
+                    count += 1
+            
+            if count > 0:
+                instrument_counts[instrument_name] = count
+        
+        if not instrument_counts:
+            return None
+        
+        # Função para extrair número do formulário para ordenação
+        def get_form_number(instrument_name):
+            import re
+            # Procura por números no nome
+            numbers = re.findall(r'\d+', instrument_name)
+            if numbers:
+                return int(numbers[0])
+            # Se não tem número, coloca no final (ex: baseline, demographics)
+            return 999
+        
+        # Ordena por número do formulário, depois por nome
+        sorted_instruments = sorted(instrument_counts.items(), 
+                                  key=lambda x: (get_form_number(x[0]), x[0]))
+        
+        # Melhora os nomes para exibição
+        formatted_instruments = []
+        for instrument_name, count in sorted_instruments:
+            # Se tem número, formata como "Formulário X"
+            import re
+            numbers = re.findall(r'\d+', instrument_name)
+            if numbers:
+                form_num = numbers[0]
+                display_name = f"Formulário {form_num}"
+            else:
+                # Para formulários sem número (baseline, demographics, etc)
+                display_name = instrument_name.replace('_', ' ').title()
+            
+            formatted_instruments.append((display_name, count))
+        
+        return {
+            'labels': [inst[0] for inst in formatted_instruments],
+            'values': [inst[1] for inst in formatted_instruments]
         }
     
     def get_completion_by_instrument(self):

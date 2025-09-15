@@ -97,7 +97,6 @@ def participants():
     """Página de participantes"""
     try:
         data = get_cached_data()
-        processor = DataProcessor(data)
         
         # Lista de participantes únicos
         participants_data = []
@@ -119,29 +118,70 @@ def participants():
         
         # Calcula estatísticas por participante
         for participant_id, records in participant_records.items():
-            total_fields = 0
-            filled_fields = 0
+            # Conta status dos formulários baseado nos campos _complete
+            complete_forms = 0
+            incomplete_forms = 0
+            unverified_forms = 0
             
-            all_fields = set()
+            # Usar um set para evitar duplicatas de formulários por participante
+            forms_status = {}
+            
             for record in records:
-                all_fields.update(record.keys())
+                # Procura por campos _complete
+                for field_name, value in record.items():
+                    if field_name.endswith('_complete') and value is not None and str(value).strip() != '':
+                        # Remove '_complete' para obter nome do formulário
+                        form_name = field_name.replace('_complete', '')
+                        
+                        # Converte valor para formato numérico padronizado
+                        current_status = str(value).strip().lower()
+                        
+                        # Mapeia valores textuais para numéricos
+                        if current_status in ['complete', 'completed', '2']:
+                            current_status = '2'
+                        elif current_status in ['incomplete', 'partial', '1']:
+                            current_status = '1'
+                        elif current_status in ['unverified', 'not verified', '0', '']:
+                            current_status = '0'
+                        else:
+                            # Se não reconhecer, tenta converter diretamente
+                            try:
+                                int(current_status)
+                            except ValueError:
+                                # Se não conseguir converter, assume como não verificado
+                                current_status = '0'
+                        
+                        # Armazena o status mais alto encontrado para este formulário
+                        if form_name not in forms_status or int(current_status) > int(forms_status.get(form_name, '0')):
+                            forms_status[form_name] = current_status
             
-            for record in records:
-                for field in all_fields:
-                    total_fields += 1
-                    if field in record and record[field] not in [None, '', 'NaN', '']:
-                        filled_fields += 1
+            # Conta os status finais
+            for status in forms_status.values():
+                if status == '2':  # Complete
+                    complete_forms += 1
+                elif status == '1':  # Incomplete  
+                    incomplete_forms += 1
+                elif status == '0':  # Unverified
+                    unverified_forms += 1
             
-            completion_rate = (filled_fields / total_fields * 100) if total_fields > 0 else 0
+            total_forms = complete_forms + incomplete_forms + unverified_forms
+            
+            # Calcula taxa de completude: completos / total de formulários preenchidos
+            filled_forms = complete_forms + incomplete_forms
+            completion_rate = round((complete_forms / filled_forms) * 100, 1) if filled_forms > 0 else 0
             
             participants_data.append({
                 'id': participant_id,
                 'records_count': len(records),
-                'completion_rate': round(completion_rate, 1)
+                'complete_forms': complete_forms,
+                'incomplete_forms': incomplete_forms,
+                'unverified_forms': unverified_forms,
+                'total_forms': total_forms,
+                'completion_rate': completion_rate
             })
         
-        # Ordena por completude
-        participants_data.sort(key=lambda x: x['completion_rate'], reverse=True)
+        # Ordena por ID do participante
+        participants_data.sort(key=lambda x: int(x['id']) if str(x['id']).isdigit() else float('inf'))
         
         return render_template('participants.html', 
                              participants=participants_data[:50])  # Limita a 50 para performance
@@ -231,6 +271,26 @@ def generate_basic_charts(processor):
                 template='plotly_white'
             )
             charts['records_per_participant'] = json.dumps(records_fig, cls=plotly.utils.PlotlyJSONEncoder)
+        
+        # Gráfico de registros por formulário/instrumento
+        instruments_data = processor.get_records_per_instrument()
+        if instruments_data:
+            instruments_fig = go.Figure(data=[
+                go.Bar(
+                    x=instruments_data['labels'], 
+                    y=instruments_data['values'],
+                    name='Registros por Formulário',
+                    marker_color=Config.PRIMARY_COLOR
+                )
+            ])
+            instruments_fig.update_layout(
+                title='Distribuição de Registros por Formulário',
+                xaxis_title='Formulário/Instrumento',
+                yaxis_title='Número de Registros',
+                height=Config.CHART_HEIGHT,
+                template='plotly_white'
+            )
+            charts['records_per_instrument'] = json.dumps(instruments_fig, cls=plotly.utils.PlotlyJSONEncoder)
         
         # Gráfico de completude por instrumento
         completion_data = processor.get_completion_by_instrument()
@@ -727,6 +787,161 @@ def not_found(error):
 @app.errorhandler(500)
 def server_error(error):
     return render_template('error.html', error='Erro interno do servidor'), 500
+
+# === ANÁLISE LONGITUDINAL - NOVA FUNCIONALIDADE ===
+
+def get_temporal_clinical_fields():
+    """Retorna campos clínicos relevantes para análise temporal"""
+    return {
+        'health_metrics': ['health_status', 'vas_health_today', 'weight'],
+        'cardiac': ['has_heart_failure'],
+        'questionnaires': ['eq5d5l_questionario_saude_complete'],
+        'services': ['utilizacao_servicos_saude_eventos_complete']
+    }
+
+def process_temporal_data(participant_data):
+    """Processa dados temporais de um participante"""
+    temporal_records = []
+    
+    for record in participant_data:
+        # Encontrar todas as datas do registro
+        dates = []
+        for field in record.keys():
+            if 'questionnaire_date' in field or 'data_preench' in field:
+                if record.get(field):
+                    dates.append({
+                        'field': field,
+                        'date': record[field],
+                        'record': record
+                    })
+        
+        temporal_records.extend(dates)
+    
+    # Ordenar por data
+    temporal_records.sort(key=lambda x: x['date'])
+    
+    return temporal_records
+
+def get_participant_summary(participant_data):
+    """Gera resumo do participante"""
+    if not participant_data:
+        return {}
+    
+    first_record = participant_data[0]
+    return {
+        'participant_code': first_record.get('participant_code', 'N/A'),
+        'total_visits': len(participant_data),
+        'age': first_record.get('age', 'N/A'),
+        'gender': first_record.get('gender', 'N/A'),
+        'group': first_record.get('participant_group', 'N/A')
+    }
+
+@app.route('/patient-evolution')
+def patient_evolution_analysis():
+    """Análise de evolução individual de pacientes"""
+    try:
+        data = get_cached_data()
+        if not data:
+            return render_template('error.html', 
+                                 error_message="Dados não disponíveis")
+        
+        # Obter lista de participantes únicos
+        participants = list(set([r.get('participant_code') for r in data if r.get('participant_code')]))
+        participants.sort()
+        
+        # Obter campos clínicos para análise temporal
+        clinical_fields = get_temporal_clinical_fields()
+        
+        return render_template('longitudinal_analysis.html', 
+                             participants=participants,
+                             clinical_fields=clinical_fields,
+                             total_records=len(data))
+    
+    except Exception as e:
+        return render_template('error.html', 
+                             error_message=f"Erro na análise longitudinal: {str(e)}")
+
+@app.route('/api/longitudinal-data/<participant_code>')
+def api_longitudinal_data(participant_code):
+    """API para dados longitudinais de um participante específico"""
+    try:
+        data = get_cached_data()
+        if not data:
+            return jsonify({'error': 'Dados não disponíveis'}), 500
+        
+        # Filtrar dados do participante
+        participant_data = [r for r in data if r.get('participant_code') == participant_code]
+        
+        # Processar dados temporais
+        temporal_data = process_temporal_data(participant_data)
+        
+        return jsonify({
+            'success': True,
+            'participant_code': participant_code,
+            'data': temporal_data,
+            'summary': get_participant_summary(participant_data)
+        })
+    
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/temporal-trends/<participant_code>/<field>')
+def api_temporal_trends(participant_code, field):
+    """API para tendências temporais de um campo específico"""
+    try:
+        data = get_cached_data()
+        if not data:
+            return jsonify({'error': 'Dados não disponíveis'}), 500
+        
+        # Filtrar dados do participante
+        participant_data = [r for r in data if r.get('participant_code') == participant_code]
+        
+        # Coletar valores temporais do campo
+        temporal_values = []
+        for record in participant_data:
+            # Verificar se o registro tem o campo
+            if record.get(field) is not None:
+                # Encontrar data associada
+                date_value = None
+                for date_field in ['questionnaire_date', 'questionnaire_date_2', 'questionnaire_date_3']:
+                    if record.get(date_field):
+                        date_value = record[date_field]
+                        break
+                
+                if date_value:
+                    temporal_values.append({
+                        'date': date_value,
+                        'value': record[field],
+                        'field': field
+                    })
+        
+        # Ordenar por data
+        temporal_values.sort(key=lambda x: x['date'])
+        
+        # Calcular tendência
+        trend = 'stable'
+        if len(temporal_values) >= 2:
+            first_val = temporal_values[0]['value']
+            last_val = temporal_values[-1]['value']
+            try:
+                if float(last_val) > float(first_val):
+                    trend = 'improving'
+                elif float(last_val) < float(first_val):
+                    trend = 'declining'
+            except (ValueError, TypeError):
+                trend = 'stable'
+        
+        return jsonify({
+            'success': True,
+            'participant_code': participant_code,
+            'field': field,
+            'values': temporal_values,
+            'trend': trend,
+            'count': len(temporal_values)
+        })
+    
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
 
 if __name__ == '__main__':
     print("🏥 Iniciando RM4Health Dashboard...")

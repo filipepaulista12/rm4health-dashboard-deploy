@@ -24,6 +24,42 @@
             <i class="fas fa-users me-2"></i>Participantes
         </h1>
 
+        <!-- Estatísticas Resumo -->
+        <div class="row mb-4">
+            <div class="col-md-3">
+                <div class="card bg-primary text-white">
+                    <div class="card-body text-center">
+                        <h3>{{ participants|length }}</h3>
+                        <small>Total de Participantes</small>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card bg-success text-white">
+                    <div class="card-body text-center">
+                        <h3>{{ (participants|map(attribute='complete_forms')|sum) }}</h3>
+                        <small>Formulários Completos</small>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card bg-warning text-white">
+                    <div class="card-body text-center">
+                        <h3>{{ (participants|map(attribute='incomplete_forms')|sum) }}</h3>
+                        <small>Formulários Incompletos</small>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card bg-info text-white">
+                    <div class="card-body text-center">
+                        <h3>{{ (participants|map(attribute='completion_rate')|sum / participants|length)|round(1) if participants else 0 }}%</h3>
+                        <small>Taxa Média de Completude</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+
         <div class="row">
             <div class="col-12">
                 <div class="card">
@@ -36,9 +72,13 @@
                             <table class="table table-hover">
                                 <thead>
                                     <tr>
-                                        <th>ID</th>
-                                        <th>Registros</th>
-                                        <th>Completude</th>
+                                        <th>ID Participante</th>
+                                        <th>Registos</th>
+                                        <th class="text-success">Completos</th>
+                                        <th class="text-warning">Incompletos</th>
+                                        <th class="text-secondary">Não Verificados</th>
+                                        <th>Total Forms</th>
+                                        <th>Taxa Completude</th>
                                         <th>Status</th>
                                     </tr>
                                 </thead>
@@ -46,24 +86,39 @@
                                     {% for participant in participants %}
                                     <tr>
                                         <td><strong>{{ participant.id }}</strong></td>
-                                        <td>{{ participant.records_count }}</td>
                                         <td>
-                                            <div class="progress" style="height: 20px;">
-                                                <div class="progress-bar" role="progressbar" 
-                                                     style="width: {{ participant.completion_rate }}%"
-                                                     aria-valuenow="{{ participant.completion_rate }}" 
-                                                     aria-valuemin="0" aria-valuemax="100">
-                                                    {{ participant.completion_rate }}%
-                                                </div>
-                                            </div>
+                                            <span class="badge bg-info">{{ participant.records_count }}</span>
                                         </td>
                                         <td>
-                                            {% if participant.completion_rate > 80 %}
-                                                <span class="badge bg-success">Completo</span>
-                                            {% elif participant.completion_rate > 50 %}
-                                                <span class="badge bg-warning">Parcial</span>
+                                            <span class="badge bg-success">{{ participant.complete_forms }}</span>
+                                        </td>
+                                        <td>
+                                            <span class="badge bg-warning">{{ participant.incomplete_forms }}</span>
+                                        </td>
+                                        <td>
+                                            <span class="badge bg-secondary">{{ participant.unverified_forms }}</span>
+                                        </td>
+                                        <td>
+                                            <span class="badge bg-primary">{{ participant.total_forms }}</span>
+                                        </td>
+                                        <td>
+                                            {% if participant.completion_rate > 0 %}
+                                                <span class="fw-bold {% if participant.completion_rate >= 80 %}text-success{% elif participant.completion_rate >= 60 %}text-warning{% else %}text-danger{% endif %}">
+                                                    {{ participant.completion_rate }}%
+                                                </span>
                                             {% else %}
-                                                <span class="badge bg-danger">Incompleto</span>
+                                                <span class="text-muted">0%</span>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            {% if participant.complete_forms >= 8 %}
+                                                <span class="badge bg-success">Muito Ativo</span>
+                                            {% elif participant.complete_forms >= 5 %}
+                                                <span class="badge bg-warning">Ativo</span>
+                                            {% elif participant.complete_forms >= 2 %}
+                                                <span class="badge bg-info">Moderado</span>
+                                            {% else %}
+                                                <span class="badge bg-secondary">Baixa Participação</span>
                                             {% endif %}
                                         </td>
                                     </tr>

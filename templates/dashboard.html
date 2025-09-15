@@ -261,10 +261,77 @@
                 <div class="card stat-card h-100">
                     <div class="card-body text-center">
                         <div class="stat-value">
-                            <i class="fas fa-percentage text-warning me-2"></i>
-                            {{ stats.completion_rate or 0 }}%
+                            <i class="fas fa-forms text-warning me-2"></i>
+                            {{ stats.total_instruments or 0 }}
                         </div>
-                        <div class="stat-label mt-2">Completude</div>
+                        <div class="stat-label mt-2">
+                            Formulários
+                            <div class="text-muted small mt-1">
+                                Instrumentos REDCap
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Distribuição por Grupos de Participantes -->
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="card-title mb-0">
+                            <i class="fas fa-users me-2"></i>
+                            Distribuição por Grupos de Participantes
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-lg-3 col-md-6 mb-3">
+                                <div class="card bg-primary text-white h-100">
+                                    <div class="card-body text-center">
+                                        <div class="h3 mb-1">{{ stats.total_grupo_a or 0 }}</div>
+                                        <div class="small">
+                                            <strong>Grupo A</strong><br>
+                                            Residentes
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-lg-3 col-md-6 mb-3">
+                                <div class="card bg-success text-white h-100">
+                                    <div class="card-body text-center">
+                                        <div class="h3 mb-1">{{ stats.total_grupo_b or 0 }}</div>
+                                        <div class="small">
+                                            <strong>Grupo B</strong><br>
+                                            Não Residentes
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-lg-3 col-md-6 mb-3">
+                                <div class="card bg-warning text-dark h-100">
+                                    <div class="card-body text-center">
+                                        <div class="h3 mb-1">{{ stats.total_grupo_c or 0 }}</div>
+                                        <div class="small">
+                                            <strong>Grupo C</strong><br>
+                                            Não Classificado
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-lg-3 col-md-6 mb-3">
+                                <div class="card bg-info text-white h-100">
+                                    <div class="card-body text-center">
+                                        <div class="h3 mb-1">{{ stats.total_grupo_d or 0 }}</div>
+                                        <div class="small">
+                                            <strong>Grupo D</strong><br>
+                                            Cuidadores
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -321,21 +388,22 @@
             </div>
             {% endif %}
 
-            <!-- Completude por Instrumento -->
-            {% if charts.completion_by_instrument %}
+            <!-- Registros por Formulário -->
+            {% if charts.records_per_instrument %}
             <div class="col-lg-6 mb-4">
                 <div class="card chart-card">
                     <div class="card-header">
                         <h5 class="mb-0">
-                            <i class="fas fa-tasks me-2"></i>Completude por Instrumento
+                            <i class="fas fa-chart-bar me-2"></i>Registros por Formulário
                         </h5>
                     </div>
                     <div class="card-body">
-                        <div id="completion-chart" class="chart-container"></div>
+                        <div id="instruments-chart" class="chart-container"></div>
                     </div>
                 </div>
             </div>
             {% endif %}
+
         </div>
         {% endif %}
 
@@ -416,12 +484,13 @@
             } catch(e) { console.error('Erro no gráfico de registros:', e); }
             {% endif %}
 
-            {% if charts.completion_by_instrument %}
+            {% if charts.records_per_instrument %}
             try {
-                const completionData = {{ charts.completion_by_instrument|safe }};
-                Plotly.newPlot('completion-chart', completionData.data, completionData.layout, {responsive: true});
-            } catch(e) { console.error('Erro no gráfico de completude:', e); }
+                const instrumentsData = {{ charts.records_per_instrument|safe }};
+                Plotly.newPlot('instruments-chart', instrumentsData.data, instrumentsData.layout, {responsive: true});
+            } catch(e) { console.error('Erro no gráfico de formulários:', e); }
             {% endif %}
+
         });
 
         // Funções utilitárias
