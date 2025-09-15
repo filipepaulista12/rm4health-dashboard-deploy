@@ -13,7 +13,9 @@ class LocalREDCapClient:
     """Cliente que simula a API do REDCap usando dados locais"""
     
     def __init__(self):
-        self.config_file = 'local_data_config.json'
+        # Get the directory where this script is located
+        script_dir = os.path.dirname(os.path.abspath(__file__))
+        self.config_file = os.path.join(script_dir, 'local_data_config.json')
         self.load_config()
         self.load_data()
     
@@ -29,15 +31,18 @@ class LocalREDCapClient:
         """Carrega todos os dados em memória"""
         print("📂 Carregando dados locais...")
         
+        # Get the directory where this script is located
+        script_dir = os.path.dirname(os.path.abspath(__file__))
+        
         # Carregar JSON completo
-        json_file = self.config['files']['json_file']
+        json_file = os.path.join(script_dir, self.config['files']['json_file'])
         with open(json_file, 'r', encoding='utf-8') as f:
             self.full_data = json.load(f)
         
         # Carregar CSVs
-        self.df_raw = pd.read_csv(self.config['files']['raw_csv'])
-        self.df_labeled = pd.read_csv(self.config['files']['labeled_csv'])
-        self.df_metadata = pd.read_csv(self.config['files']['metadata_csv'])
+        self.df_raw = pd.read_csv(os.path.join(script_dir, self.config['files']['raw_csv']))
+        self.df_labeled = pd.read_csv(os.path.join(script_dir, self.config['files']['labeled_csv']))
+        self.df_metadata = pd.read_csv(os.path.join(script_dir, self.config['files']['metadata_csv']))
         
         print(f"✅ Dados carregados: {len(self.df_raw)} registros")
     
