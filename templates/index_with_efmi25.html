@@ -1,0 +1,377 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RM4Health - Análise de Domínios de Qualidade</title>
+    <script src="https://cdn.plot.ly/plotly-2.24.1.min.js"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        body { 
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+            background-color: #f8f9fa; 
+        }
+        .header { 
+            background: linear-gradient(135deg, #2c5aa0, #48c9b0); 
+            color: white; 
+            padding: 30px; 
+            border-radius: 15px; 
+            margin-bottom: 30px; 
+            text-align: center;
+        }
+        .dashboard-card {
+            background: white;
+            border-radius: 15px;
+            padding: 25px;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            border-left: 5px solid #2c5aa0;
+        }
+        .dashboard-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+        }
+        .dashboard-card.efmi25 { border-left-color: #e74c3c; }
+        .dashboard-card.quality { border-left-color: #f39c12; }
+        .dashboard-card.clinical { border-left-color: #27ae60; }
+        .dashboard-card.analytics { border-left-color: #9b59b6; }
+        
+        .card-icon {
+            font-size: 3rem;
+            margin-bottom: 15px;
+            opacity: 0.8;
+        }
+        .efmi25 .card-icon { color: #e74c3c; }
+        .quality .card-icon { color: #f39c12; }
+        .clinical .card-icon { color: #27ae60; }
+        .analytics .card-icon { color: #9b59b6; }
+        
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        .stat-card {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            text-align: center;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .stat-value {
+            font-size: 2.5em;
+            font-weight: bold;
+            color: #2c5aa0;
+            margin-bottom: 10px;
+        }
+        .btn-dashboard {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border: none;
+            color: white;
+            padding: 12px 25px;
+            border-radius: 25px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+        .btn-dashboard:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+            color: white;
+        }
+        .news-badge {
+            background: linear-gradient(135deg, #ff6b6b, #ffd93d);
+            color: white;
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: bold;
+            animation: pulse 2s infinite;
+        }
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
+        }
+    </style>
+</head>
+<body>
+    <div class="container mt-4">
+        <div class="header">
+            <h1><i class="fas fa-heartbeat me-3"></i>RM4Health Dashboard</h1>
+            <p class="lead">Sistema de Monitoramento Remoto de Saúde - Análise de Qualidade</p>
+            <small>Última atualização: 29/08/2025</small>
+        </div>
+
+        <!-- Statistics Overview -->
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-value">596</div>
+                <div class="stat-label">Total de Registros</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value">15</div>
+                <div class="stat-label">Dashboards Disponíveis</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value">4</div>
+                <div class="stat-label">Domínios EFMI25</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value">✅</div>
+                <div class="stat-label">Sistema Ativo</div>
+            </div>
+        </div>
+
+        <!-- Main Dashboards Grid -->
+        <div class="row">
+            <!-- EFMI25 Framework Dashboard - NEW -->
+            <div class="col-lg-6 mb-4">
+                <div class="dashboard-card efmi25">
+                    <div class="text-center">
+                        <div class="card-icon">
+                            <i class="fas fa-award"></i>
+                        </div>
+                        <h4>Análise Multidimensional</h4>
+                        <span class="news-badge mb-3 d-inline-block">NOVO!</span>
+                        <p class="text-muted">
+                            Avaliação estruturada em 4 domínios de qualidade: 
+                            Técnico (arquitetura e FHIR), Ético (privacidade e conformidade), 
+                            Organizacional (processos e stakeholders), e Clínico (relevância dos dados).
+                        </p>
+                        <div class="row mt-3">
+                            <div class="col-6">
+                                <small class="text-muted">
+                                    <i class="fas fa-check-circle text-success me-1"></i>
+                                    Conformidade FHIR
+                                </small>
+                            </div>
+                            <div class="col-6">
+                                <small class="text-muted">
+                                    <i class="fas fa-check-circle text-success me-1"></i>
+                                    Design Inclusivo
+                                </small>
+                            </div>
+                        </div>
+                        <a href="/rm4health-domains-assessment" class="btn btn-dashboard mt-3">
+                            <i class="fas fa-rocket me-2"></i>Abrir Análise Multidimensional
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Quality Analysis Dashboard -->
+            <div class="col-lg-6 mb-4">
+                <div class="dashboard-card quality">
+                    <div class="text-center">
+                        <div class="card-icon">
+                            <i class="fas fa-shield-alt"></i>
+                        </div>
+                        <h4>Qualidade de Dados</h4>
+                        <p class="text-muted">
+                            Análise completa de qualidade incluindo padrões de dados ausentes, 
+                            consistência temporal, qualidade dos instrumentos e recomendações 
+                            para melhoria da coleta de dados.
+                        </p>
+                        <div class="row mt-3">
+                            <div class="col-6">
+                                <small class="text-muted">
+                                    <i class="fas fa-check-circle text-success me-1"></i>
+                                    Missing Patterns
+                                </small>
+                            </div>
+                            <div class="col-6">
+                                <small class="text-muted">
+                                    <i class="fas fa-check-circle text-success me-1"></i>
+                                    Consistency Check
+                                </small>
+                            </div>
+                        </div>
+                        <a href="/data-quality" class="btn btn-dashboard mt-3">
+                            <i class="fas fa-chart-line me-2"></i>Análise de Qualidade
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Clinical Analysis Dashboard -->
+            <div class="col-lg-6 mb-4">
+                <div class="dashboard-card clinical">
+                    <div class="text-center">
+                        <div class="card-icon">
+                            <i class="fas fa-stethoscope"></i>
+                        </div>
+                        <h4>Análises Clínicas</h4>
+                        <p class="text-muted">
+                            Dashboards especializados em análises clínicas incluindo sono, 
+                            adesão medicamentosa, comparação residencial e utilização 
+                            de serviços de saúde.
+                        </p>
+                        <div class="dropdown">
+                            <button class="btn btn-dashboard dropdown-toggle mt-3" type="button" data-bs-toggle="dropdown">
+                                <i class="fas fa-hospital me-2"></i>Análises Clínicas
+                            </button>
+                            <ul class="dropdown-menu">
+                                <li><a class="dropdown-item" href="/sleep-analysis">
+                                    <i class="fas fa-moon me-2"></i>Análise do Sono
+                                </a></li>
+                                <li><a class="dropdown-item" href="/medication-adherence">
+                                    <i class="fas fa-pills me-2"></i>Adesão Medicamentosa
+                                </a></li>
+                                <li><a class="dropdown-item" href="/residence-comparison">
+                                    <i class="fas fa-home me-2"></i>Comparação Residencial
+                                </a></li>
+                                <li><a class="dropdown-item" href="/healthcare-utilization">
+                                    <i class="fas fa-ambulance me-2"></i>Utilização de Serviços
+                                </a></li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Advanced Analytics Dashboard -->
+            <div class="col-lg-6 mb-4">
+                <div class="dashboard-card analytics">
+                    <div class="text-center">
+                        <div class="card-icon">
+                            <i class="fas fa-chart-bar"></i>
+                        </div>
+                        <h4>Analytics Avançados</h4>
+                        <p class="text-muted">
+                            Ferramentas avançadas de análise incluindo exploração de dados, 
+                            análises longitudinais, padrões comportamentais e segmentação 
+                            de participantes.
+                        </p>
+                        <div class="dropdown">
+                            <button class="btn btn-dashboard dropdown-toggle mt-3" type="button" data-bs-toggle="dropdown">
+                                <i class="fas fa-analytics me-2"></i>Analytics Avançados
+                            </button>
+                            <ul class="dropdown-menu">
+                                <li><a class="dropdown-item" href="/data-explorer">
+                                    <i class="fas fa-search me-2"></i>Explorador de Dados
+                                </a></li>
+                                <li><a class="dropdown-item" href="/longitudinal-analysis">
+                                    <i class="fas fa-chart-line me-2"></i>Análise Longitudinal
+                                </a></li>
+                                <li><a class="dropdown-item" href="/patterns">
+                                    <i class="fas fa-project-diagram me-2"></i>Padrões
+                                </a></li>
+                                <li><a class="dropdown-item" href="/groups">
+                                    <i class="fas fa-users me-2"></i>Grupos
+                                </a></li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Quick Access Links -->
+        <div class="row mt-4">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-header bg-primary text-white">
+                        <h5 class="mb-0">
+                            <i class="fas fa-link me-2"></i>
+                            Acesso Rápido - Todas as Análises
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-4">
+                                <h6 class="text-primary">Participantes & Instrumentos</h6>
+                                <ul class="list-unstyled">
+                                    <li><a href="/participants" class="text-decoration-none">
+                                        <i class="fas fa-users me-2"></i>Participantes
+                                    </a></li>
+                                    <li><a href="/instruments" class="text-decoration-none">
+                                        <i class="fas fa-clipboard-list me-2"></i>Instrumentos
+                                    </a></li>
+                                    <li><a href="/caregivers" class="text-decoration-none">
+                                        <i class="fas fa-hand-holding-heart me-2"></i>Cuidadores
+                                    </a></li>
+                                </ul>
+                            </div>
+                            <div class="col-md-4">
+                                <h6 class="text-success">Análises Específicas</h6>
+                                <ul class="list-unstyled">
+                                    <li><a href="/functional-capacity" class="text-decoration-none">
+                                        <i class="fas fa-running me-2"></i>Capacidade Funcional
+                                    </a></li>
+                                    <li><a href="/cognitive-assessment" class="text-decoration-none">
+                                        <i class="fas fa-brain me-2"></i>Avaliação Cognitiva
+                                    </a></li>
+                                    <li><a href="/quality-of-life" class="text-decoration-none">
+                                        <i class="fas fa-heart me-2"></i>Qualidade de Vida
+                                    </a></li>
+                                </ul>
+                            </div>
+                            <div class="col-md-4">
+                                <h6 class="text-warning">Sistema & Dados</h6>
+                                <ul class="list-unstyled">
+                                    <li><a href="/api/data-summary" class="text-decoration-none">
+                                        <i class="fas fa-database me-2"></i>API Data Summary
+                                    </a></li>
+                                    <li><a href="/api/health" class="text-decoration-none">
+                                        <i class="fas fa-heartbeat me-2"></i>System Health
+                                    </a></li>
+                                    <li><a href="/update-status" class="text-decoration-none">
+                                        <i class="fas fa-sync me-2"></i>Status de Atualização
+                                    </a></li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <footer class="mt-5 text-center text-muted">
+            <hr>
+            <p>
+                <i class="fas fa-university me-2"></i>
+                RM4Health Project - Faculdade de Medicina da Universidade do Porto
+                <br>
+                <small>Dashboard integrado com análises multidimensionais de qualidade</small>
+            </p>
+        </footer>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Add some interactive effects
+        document.addEventListener('DOMContentLoaded', function() {
+            // Animate stat cards on load
+            const statCards = document.querySelectorAll('.stat-card');
+            statCards.forEach((card, index) => {
+                setTimeout(() => {
+                    card.style.opacity = '0';
+                    card.style.transform = 'translateY(20px)';
+                    card.style.transition = 'all 0.5s ease';
+                    setTimeout(() => {
+                        card.style.opacity = '1';
+                        card.style.transform = 'translateY(0)';
+                    }, 100);
+                }, index * 100);
+            });
+
+            // Add click tracking for dashboard cards
+            const dashboardCards = document.querySelectorAll('.dashboard-card');
+            dashboardCards.forEach(card => {
+                card.addEventListener('click', function(e) {
+                    if (e.target.tagName !== 'A' && e.target.tagName !== 'BUTTON') {
+                        const link = this.querySelector('a.btn-dashboard');
+                        if (link) {
+                            link.click();
+                        }
+                    }
+                });
+            });
+        });
+    </script>
+</body>
+</html>

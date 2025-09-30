@@ -1,0 +1,802 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>😴 Análise do Sono - RM4Health</title>
+    
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    
+    <!-- Plotly.js -->
+    <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+    
+    <style>
+        .sleep-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-radius: 15px;
+            box-shadow: 0 8px 32px rgba(31, 38, 135, 0.37);
+            backdrop-filter: blur(8.5px);
+            border: 1px solid rgba(255, 255, 255, 0.18);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+        
+        .sleep-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 15px 35px rgba(31, 38, 135, 0.4);
+        }
+        
+        .good-sleeper { 
+            background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%); 
+        }
+        .poor-sleeper { 
+            background: linear-gradient(135deg, #fc466b 0%, #3f5efb 100%); 
+        }
+        .moderate-sleeper { 
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); 
+        }
+        .medication-dependent { 
+            background: linear-gradient(135deg, #fa709a 0%, #fee140 100%); 
+        }
+        
+        .component-card {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 15px;
+            padding: 20px;
+            margin: 10px 0;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            transition: all 0.3s ease;
+        }
+        
+        .component-card:hover {
+            transform: scale(1.02);
+            box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+        }
+        
+        .psqi-component {
+            border-left: 5px solid #667eea;
+            background: linear-gradient(90deg, rgba(102, 126, 234, 0.1) 0%, rgba(255, 255, 255, 0.05) 100%);
+        }
+        
+        .correlation-item {
+            background: linear-gradient(90deg, rgba(118, 75, 162, 0.1) 0%, rgba(102, 126, 234, 0.05) 100%);
+            border-left: 4px solid #764ba2;
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 8px;
+        }
+        
+        .profile-badge {
+            font-size: 0.9em;
+            padding: 8px 12px;
+            border-radius: 20px;
+            font-weight: bold;
+        }
+        
+        .chart-container {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 15px;
+            padding: 20px;
+            margin: 20px 0;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        
+        .sleep-metrics {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin: 20px 0;
+        }
+        
+        .metric-item {
+            text-align: center;
+            padding: 15px;
+            background: rgba(255, 255, 255, 0.9);
+            border-radius: 10px;
+            box-shadow: 0 3px 10px rgba(0,0,0,0.1);
+        }
+        
+        .night-mode {
+            background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);
+            color: #ecf0f1;
+        }
+    </style>
+</head>
+<body style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); min-height: 100vh;">
+    
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+        <div class="container">
+            <a class="navbar-brand" href="/">
+                <i class="fas fa-chart-line"></i> RM4Health Analytics
+            </a>
+            <div class="navbar-nav ms-auto">
+                <a class="nav-link" href="/">
+                    <i class="fas fa-home"></i> Dashboard
+                </a>
+                <a class="nav-link" href="/longitudinal">
+                    <i class="fas fa-chart-line"></i> Análise Longitudinal
+                </a>
+                <a class="nav-link" href="/alerts">
+                    <i class="fas fa-exclamation-triangle"></i> Alertas Clínicos
+                </a>
+                <a class="nav-link" href="/medication-adherence">
+                    <i class="fas fa-pills"></i> Adesão Medicamentosa
+                </a>
+                <a class="nav-link active">
+                    <i class="fas fa-bed"></i> Análise do Sono
+                </a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container mt-4">
+        
+        <!-- Header -->
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="card bg-dark text-white">
+                    <div class="card-body text-center">
+                        <h1><i class="fas fa-bed"></i> Análise Completa do Sono</h1>
+                        <p class="lead">Avaliação baseada no Pittsburgh Sleep Quality Index (PSQI) - RM4Health</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        {% if not success %}
+        <div class="row">
+            <div class="col-12">
+                <div class="alert alert-danger">
+                    <h4><i class="fas fa-exclamation-triangle"></i> Erro na Análise</h4>
+                    <p>{{ error }}</p>
+                </div>
+            </div>
+        </div>
+        {% else %}
+
+        <!-- Métricas Principais do Sono -->
+        <div class="row mb-4">
+            <div class="col-md-3">
+                <div class="card sleep-card good-sleeper">
+                    <div class="card-body text-center">
+                        <i class="fas fa-smile fa-2x mb-2"></i>
+                        <h3>{{ components.global_psqi.classification.good_sleepers or 0 }}</h3>
+                        <p>Bons Dormidores</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card sleep-card poor-sleeper">
+                    <div class="card-body text-center">
+                        <i class="fas fa-frown fa-2x mb-2"></i>
+                        <h3>{{ components.global_psqi.classification.poor_sleepers or 0 }}</h3>
+                        <p>Dormidores com Dificuldades</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card sleep-card">
+                    <div class="card-body text-center">
+                        <i class="fas fa-chart-bar fa-2x mb-2"></i>
+                        <h3>{{ components.global_psqi.classification.mean_psqi or 0 }}</h3>
+                        <p>PSQI Médio Global</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card sleep-card">
+                    <div class="card-body text-center">
+                        <i class="fas fa-users fa-2x mb-2"></i>
+                        <h3>{{ components.summary.total_participants or 0 }}</h3>
+                        <p>Participantes Analisados</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Abas de Análise -->
+        <div class="row">
+            <div class="col-12">
+                <ul class="nav nav-tabs" id="sleepTab" role="tablist">
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link active" id="psqi-tab" data-bs-toggle="tab" data-bs-target="#psqi" type="button">
+                            <i class="fas fa-chart-radar"></i> Componentes PSQI
+                        </button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="profiles-tab" data-bs-toggle="tab" data-bs-target="#profiles" type="button">
+                            <i class="fas fa-user-friends"></i> Perfis de Sono
+                        </button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="correlations-tab" data-bs-toggle="tab" data-bs-target="#correlations" type="button">
+                            <i class="fas fa-project-diagram"></i> Correlações
+                        </button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="medication-tab" data-bs-toggle="tab" data-bs-target="#medication" type="button">
+                            <i class="fas fa-pills"></i> Impacto da Medicação
+                        </button>
+                    </li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- Conteúdo das Abas -->
+        <div class="tab-content" id="sleepTabContent">
+            
+            <!-- ABA 1: Componentes PSQI -->
+            <div class="tab-pane fade show active" id="psqi" role="tabpanel">
+                <div class="row mt-4">
+                    
+                    <!-- Radar Chart dos Componentes PSQI -->
+                    <div class="col-lg-8">
+                        <div class="card">
+                            <div class="card-header">
+                                <h5><i class="fas fa-chart-radar"></i> Componentes PSQI - Radar Chart</h5>
+                            </div>
+                            <div class="card-body">
+                                <div id="psqiRadarChart"></div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Distribuição PSQI Global -->
+                    <div class="col-lg-4">
+                        <div class="card">
+                            <div class="card-header">
+                                <h5><i class="fas fa-pie-chart"></i> Distribuição Global PSQI</h5>
+                            </div>
+                            <div class="card-body">
+                                <div id="psqiDistributionChart"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Detalhes dos Componentes -->
+                <div class="row mt-4">
+                    <div class="col-12">
+                        <div class="card">
+                            <div class="card-header">
+                                <h5><i class="fas fa-list-alt"></i> Detalhes dos 7 Componentes PSQI</h5>
+                            </div>
+                            <div class="card-body">
+                                <div class="row">
+                                    {% for comp_key, component in components.components.items() %}
+                                    <div class="col-lg-6 col-xl-4">
+                                        <div class="component-card psqi-component">
+                                            <h6><i class="fas fa-moon"></i> {{ component.name }}</h6>
+                                            <p class="small text-muted">{{ component.description }}</p>
+                                            
+                                            <div class="d-flex justify-content-between align-items-center">
+                                                <span class="badge 
+                                                    {% if component.get('mean_score', 0) <= 1 %}bg-success
+                                                    {% elif component.get('mean_score', 0) <= 2 %}bg-warning
+                                                    {% else %}bg-danger{% endif %}">
+                                                    Score: {{ component.get('mean_score', 'N/A') }}
+                                                </span>
+                                                <small class="text-muted">{{ component.get('participants', 0) }} participantes</small>
+                                            </div>
+                                            
+                                            {% if component.distribution %}
+                                            <div class="mt-2">
+                                                <small><strong>Distribuição:</strong></small>
+                                                {% for value, count in component.distribution.items() %}
+                                                <div class="d-flex justify-content-between">
+                                                    <small>{{ value }}</small>
+                                                    <small>{{ count }}</small>
+                                                </div>
+                                                {% endfor %}
+                                            </div>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ABA 2: Perfis de Sono -->
+            <div class="tab-pane fade" id="profiles" role="tabpanel">
+                <div class="row mt-4">
+                    
+                    <!-- Distribuição dos Perfis -->
+                    <div class="col-lg-6">
+                        <div class="card">
+                            <div class="card-header">
+                                <h5><i class="fas fa-chart-pie"></i> Distribuição dos Perfis</h5>
+                            </div>
+                            <div class="card-body">
+                                <div id="sleepProfilesChart"></div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Estatísticas dos Perfis -->
+                    <div class="col-lg-6">
+                        <div class="card">
+                            <div class="card-header">
+                                <h5><i class="fas fa-chart-bar"></i> Características dos Perfis</h5>
+                            </div>
+                            <div class="card-body">
+                                <div id="profileCharacteristicsChart"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Lista Detalhada de Participantes por Perfil -->
+                <div class="row mt-4">
+                    <div class="col-12">
+                        <div class="card">
+                            <div class="card-header">
+                                <h5><i class="fas fa-users"></i> Participantes por Perfil de Sono</h5>
+                            </div>
+                            <div class="card-body">
+                                {% for profile_type, stats in profiles.profile_statistics.items() %}
+                                <div class="mb-4">
+                                    <h6>
+                                        <span class="profile-badge" style="background-color: {{ stats.color }}; color: white;">
+                                            {{ profile_type }}
+                                        </span>
+                                        <small class="text-muted ms-2">{{ stats.count }} participantes ({{ stats.percentage }}%)</small>
+                                    </h6>
+                                    
+                                    <div class="sleep-metrics">
+                                        <div class="metric-item">
+                                            <strong>{{ stats.avg_sleep_quality }}</strong>
+                                            <br><small>Qualidade do Sono</small>
+                                        </div>
+                                        <div class="metric-item">
+                                            <strong>{{ stats.avg_daytime_sleepiness }}</strong>
+                                            <br><small>Sonolência Diurna</small>
+                                        </div>
+                                        <div class="metric-item">
+                                            <strong>{{ stats.avg_medication_use }}</strong>
+                                            <br><small>Uso de Medicação</small>
+                                        </div>
+                                    </div>
+                                </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ABA 3: Correlações -->
+            <div class="tab-pane fade" id="correlations" role="tabpanel">
+                <div class="row mt-4">
+                    
+                    <!-- Matriz de Correlações -->
+                    <div class="col-lg-8">
+                        <div class="card">
+                            <div class="card-header">
+                                <h5><i class="fas fa-th"></i> Matriz de Correlações Sono vs Sintomas</h5>
+                            </div>
+                            <div class="card-body">
+                                <div id="correlationMatrix"></div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Resumo das Correlações -->
+                    <div class="col-lg-4">
+                        <div class="card">
+                            <div class="card-header">
+                                <h5><i class="fas fa-info-circle"></i> Resumo das Correlações</h5>
+                            </div>
+                            <div class="card-body">
+                                <ul class="list-group list-group-flush">
+                                    <li class="list-group-item d-flex justify-content-between">
+                                        <span>Total de Correlações:</span>
+                                        <strong>{{ correlations.summary.total_correlations or 0 }}</strong>
+                                    </li>
+                                    <li class="list-group-item d-flex justify-content-between">
+                                        <span>Correlações Significativas:</span>
+                                        <strong>{{ correlations.summary.significant_correlations or 0 }}</strong>
+                                    </li>
+                                    <li class="list-group-item d-flex justify-content-between">
+                                        <span>Participantes Analisados:</span>
+                                        <strong>{{ correlations.summary.participants_analyzed or 0 }}</strong>
+                                    </li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Correlações Detalhadas -->
+                <div class="row mt-4">
+                    <div class="col-12">
+                        <div class="card">
+                            <div class="card-header">
+                                <h5><i class="fas fa-search"></i> Correlações Detalhadas</h5>
+                            </div>
+                            <div class="card-body">
+                                {% for sleep_field, field_correlations in correlations.correlations.items() %}
+                                <h6><i class="fas fa-bed"></i> {{ sleep_field|replace('_', ' ')|title }}</h6>
+                                {% for symptom_field, corr_data in field_correlations.items() %}
+                                <div class="correlation-item">
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <div>
+                                            <strong>{{ symptom_field|replace('_', ' ')|title }}</strong>
+                                            <br>
+                                            <small class="text-muted">{{ corr_data.n_participants }} participantes</small>
+                                        </div>
+                                        <div class="text-end">
+                                            <span class="badge 
+                                                {% if corr_data.correlation|abs >= 0.5 %}bg-success
+                                                {% elif corr_data.correlation|abs >= 0.3 %}bg-warning
+                                                {% else %}bg-secondary{% endif %}">
+                                                {{ corr_data.correlation }}
+                                            </span>
+                                            <br>
+                                            <small>{{ corr_data.strength }} {{ corr_data.direction }}</small>
+                                        </div>
+                                    </div>
+                                </div>
+                                {% endfor %}
+                                {% endfor %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ABA 4: Impacto da Medicação -->
+            <div class="tab-pane fade" id="medication" role="tabpanel">
+                <div class="row mt-4">
+                    
+                    <!-- Correlação Medicação vs Sono -->
+                    <div class="col-lg-6">
+                        <div class="card">
+                            <div class="card-header">
+                                <h5><i class="fas fa-chart-line"></i> Medicação vs Qualidade do Sono</h5>
+                            </div>
+                            <div class="card-body">
+                                <div id="medicationSleepChart"></div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Estatísticas por Categoria -->
+                    <div class="col-lg-6">
+                        <div class="card">
+                            <div class="card-header">
+                                <h5><i class="fas fa-chart-bar"></i> Análise por Categoria de Medicação</h5>
+                            </div>
+                            <div class="card-body">
+                                <div id="medicationCategoriesChart"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Resumo do Impacto da Medicação -->
+                <div class="row mt-4">
+                    <div class="col-12">
+                        <div class="card">
+                            <div class="card-header">
+                                <h5><i class="fas fa-pills"></i> Resumo do Impacto da Medicação no Sono</h5>
+                            </div>
+                            <div class="card-body">
+                                <div class="sleep-metrics">
+                                    <div class="metric-item">
+                                        <h4>{{ medication_impact.summary.total_participants or 0 }}</h4>
+                                        <small>Total de Participantes</small>
+                                    </div>
+                                    <div class="metric-item">
+                                        <h4>{{ medication_impact.summary.participants_using_sleep_medication or 0 }}</h4>
+                                        <small>Usando Medicação para Dormir</small>
+                                    </div>
+                                    <div class="metric-item">
+                                        <h4>{{ medication_impact.summary.avg_sleep_quality or 0 }}</h4>
+                                        <small>Qualidade Média do Sono</small>
+                                    </div>
+                                    <div class="metric-item">
+                                        <h4>{{ medication_impact.summary.correlation_strength or 'N/A' }}</h4>
+                                        <small>Força da Correlação</small>
+                                    </div>
+                                </div>
+                                
+                                {% if medication_impact.medication_sleep_correlation %}
+                                <div class="alert alert-info mt-3">
+                                    <i class="fas fa-info-circle"></i>
+                                    <strong>Correlação Medicação-Sono:</strong> {{ medication_impact.medication_sleep_correlation }}
+                                    ({{ medication_impact.summary.correlation_strength }})
+                                </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        {% endif %}
+        
+    </div>
+
+    <!-- Scripts -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <script>
+        // Dados do backend
+        const components = {{ components|tojson }};
+        const profiles = {{ profiles|tojson }};
+        const correlations = {{ correlations|tojson }};
+        const medicationImpact = {{ medication_impact|tojson }};
+        
+        // 1. Radar Chart dos Componentes PSQI
+        if (components && components.components) {
+            const componentNames = [];
+            const componentScores = [];
+            
+            for (const [key, component] of Object.entries(components.components)) {
+                componentNames.push(component.name);
+                componentScores.push(component.mean_score || 0);
+            }
+            
+            const radarData = [{
+                type: 'scatterpolar',
+                r: componentScores,
+                theta: componentNames,
+                fill: 'toself',
+                marker: {
+                    color: 'rgba(102, 126, 234, 0.6)',
+                    size: 8
+                },
+                line: {
+                    color: 'rgba(102, 126, 234, 0.8)',
+                    width: 3
+                },
+                name: 'Score PSQI'
+            }];
+            
+            const radarLayout = {
+                polar: {
+                    radialaxis: {
+                        visible: true,
+                        range: [0, 3],
+                        tickmode: 'array',
+                        tickvals: [0, 1, 2, 3],
+                        ticktext: ['Ótimo', 'Bom', 'Regular', 'Ruim']
+                    }
+                },
+                title: 'Perfil PSQI - 7 Componentes',
+                showlegend: false,
+                plot_bgcolor: 'rgba(0,0,0,0)',
+                paper_bgcolor: 'rgba(0,0,0,0)'
+            };
+            
+            Plotly.newPlot('psqiRadarChart', radarData, radarLayout, {responsive: true});
+        }
+        
+        // 2. Distribuição PSQI Global
+        if (components && components.global_psqi && components.global_psqi.classification) {
+            const classification = components.global_psqi.classification;
+            
+            const distributionData = [{
+                values: [classification.good_sleepers || 0, classification.poor_sleepers || 0],
+                labels: ['Bons Dormidores', 'Dormidores com Dificuldades'],
+                type: 'pie',
+                hole: 0.4,
+                marker: {
+                    colors: ['#28a745', '#dc3545']
+                }
+            }];
+            
+            const distributionLayout = {
+                title: 'Classificação PSQI Global',
+                showlegend: true,
+                plot_bgcolor: 'rgba(0,0,0,0)',
+                paper_bgcolor: 'rgba(0,0,0,0)'
+            };
+            
+            Plotly.newPlot('psqiDistributionChart', distributionData, distributionLayout, {responsive: true});
+        }
+        
+        // 3. Perfis de Sono
+        if (profiles && profiles.profile_distribution) {
+            const profileLabels = Object.keys(profiles.profile_distribution);
+            const profileValues = Object.values(profiles.profile_distribution);
+            const profileColors = profileLabels.map(label => {
+                const stats = profiles.profile_statistics[label];
+                return stats ? stats.color : '#6c757d';
+            });
+            
+            const profilesData = [{
+                values: profileValues,
+                labels: profileLabels,
+                type: 'pie',
+                marker: {
+                    colors: profileColors
+                }
+            }];
+            
+            const profilesLayout = {
+                title: 'Distribuição dos Perfis de Sono',
+                showlegend: true,
+                plot_bgcolor: 'rgba(0,0,0,0)',
+                paper_bgcolor: 'rgba(0,0,0,0)'
+            };
+            
+            Plotly.newPlot('sleepProfilesChart', profilesData, profilesLayout, {responsive: true});
+        }
+        
+        // 4. Características dos Perfis
+        if (profiles && profiles.profile_statistics) {
+            const profileTypes = Object.keys(profiles.profile_statistics);
+            const sleepQuality = profileTypes.map(type => profiles.profile_statistics[type].avg_sleep_quality || 0);
+            const daytimeSleepiness = profileTypes.map(type => profiles.profile_statistics[type].avg_daytime_sleepiness || 0);
+            const medicationUse = profileTypes.map(type => profiles.profile_statistics[type].avg_medication_use || 0);
+            
+            const characteristicsData = [
+                {
+                    x: profileTypes,
+                    y: sleepQuality,
+                    type: 'bar',
+                    name: 'Qualidade do Sono',
+                    marker: { color: 'rgba(40, 167, 69, 0.8)' }
+                },
+                {
+                    x: profileTypes,
+                    y: daytimeSleepiness,
+                    type: 'bar',
+                    name: 'Sonolência Diurna',
+                    marker: { color: 'rgba(255, 193, 7, 0.8)' }
+                },
+                {
+                    x: profileTypes,
+                    y: medicationUse,
+                    type: 'bar',
+                    name: 'Uso de Medicação',
+                    marker: { color: 'rgba(220, 53, 69, 0.8)' }
+                }
+            ];
+            
+            const characteristicsLayout = {
+                title: 'Características Médias por Perfil',
+                xaxis: { title: 'Perfil de Sono' },
+                yaxis: { title: 'Score Médio' },
+                barmode: 'group',
+                plot_bgcolor: 'rgba(0,0,0,0)',
+                paper_bgcolor: 'rgba(0,0,0,0)'
+            };
+            
+            Plotly.newPlot('profileCharacteristicsChart', characteristicsData, characteristicsLayout, {responsive: true});
+        }
+        
+        // 5. Matriz de Correlações (simplificada)
+        if (correlations && correlations.correlations) {
+            let correlationData = [];
+            let xLabels = [];
+            let yLabels = [];
+            let zValues = [];
+            
+            // Preparar dados da matriz
+            for (const [sleepField, fieldCorrelations] of Object.entries(correlations.correlations)) {
+                yLabels.push(sleepField.replace(/_/g, ' '));
+                let rowValues = [];
+                
+                for (const [symptomField, corrData] of Object.entries(fieldCorrelations)) {
+                    if (!xLabels.includes(symptomField.replace(/_/g, ' '))) {
+                        xLabels.push(symptomField.replace(/_/g, ' '));
+                    }
+                    rowValues.push(corrData.correlation || 0);
+                }
+                zValues.push(rowValues);
+            }
+            
+            if (xLabels.length > 0 && yLabels.length > 0) {
+                const heatmapData = [{
+                    z: zValues,
+                    x: xLabels,
+                    y: yLabels,
+                    type: 'heatmap',
+                    colorscale: 'RdBu',
+                    zmid: 0,
+                    colorbar: {
+                        title: 'Correlação'
+                    }
+                }];
+                
+                const heatmapLayout = {
+                    title: 'Matriz de Correlações Sono-Sintomas',
+                    xaxis: { title: 'Variáveis de Sintomas' },
+                    yaxis: { title: 'Variáveis de Sono' },
+                    plot_bgcolor: 'rgba(0,0,0,0)',
+                    paper_bgcolor: 'rgba(0,0,0,0)'
+                };
+                
+                Plotly.newPlot('correlationMatrix', heatmapData, heatmapLayout, {responsive: true});
+            }
+        }
+        
+        // 6. Medicação vs Sono (scatter plot)
+        if (medicationImpact && medicationImpact.participant_analysis) {
+            const participants = Object.values(medicationImpact.participant_analysis);
+            const medFrequency = participants.map(p => p.sleep_medication_frequency || 0);
+            const sleepQuality = participants.map(p => p.sleep_quality_score || 3);
+            
+            const scatterData = [{
+                x: medFrequency,
+                y: sleepQuality,
+                mode: 'markers',
+                type: 'scatter',
+                marker: {
+                    size: 10,
+                    color: 'rgba(102, 126, 234, 0.7)',
+                    line: {
+                        color: 'rgba(102, 126, 234, 1)',
+                        width: 2
+                    }
+                },
+                name: 'Participantes'
+            }];
+            
+            const scatterLayout = {
+                title: 'Frequência de Medicação vs Qualidade do Sono',
+                xaxis: { title: 'Frequência de Medicação para Dormir' },
+                yaxis: { title: 'Qualidade do Sono' },
+                showlegend: false,
+                plot_bgcolor: 'rgba(0,0,0,0)',
+                paper_bgcolor: 'rgba(0,0,0,0)'
+            };
+            
+            Plotly.newPlot('medicationSleepChart', scatterData, scatterLayout, {responsive: true});
+        }
+        
+        // 7. Categorias de Medicação
+        if (medicationImpact && medicationImpact.category_statistics) {
+            const categories = Object.keys(medicationImpact.category_statistics);
+            const participantCounts = categories.map(cat => medicationImpact.category_statistics[cat].participant_count || 0);
+            const avgSleepQuality = categories.map(cat => medicationImpact.category_statistics[cat].avg_sleep_quality || 0);
+            
+            const categoriesData = [
+                {
+                    x: categories,
+                    y: participantCounts,
+                    type: 'bar',
+                    name: 'Número de Participantes',
+                    yaxis: 'y',
+                    marker: { color: 'rgba(54, 162, 235, 0.8)' }
+                },
+                {
+                    x: categories,
+                    y: avgSleepQuality,
+                    type: 'scatter',
+                    mode: 'lines+markers',
+                    name: 'Qualidade Média do Sono',
+                    yaxis: 'y2',
+                    line: { color: 'rgba(255, 99, 132, 1)', width: 3 },
+                    marker: { size: 8, color: 'rgba(255, 99, 132, 1)' }
+                }
+            ];
+            
+            const categoriesLayout = {
+                title: 'Análise por Categoria de Medicação',
+                xaxis: { title: 'Categoria de Uso de Medicação' },
+                yaxis: { title: 'Número de Participantes', side: 'left' },
+                yaxis2: { title: 'Qualidade do Sono', side: 'right', overlaying: 'y' },
+                plot_bgcolor: 'rgba(0,0,0,0)',
+                paper_bgcolor: 'rgba(0,0,0,0)'
+            };
+            
+            Plotly.newPlot('medicationCategoriesChart', categoriesData, categoriesLayout, {responsive: true});
+        }
+        
+        // Auto-refresh opcional
+        // setInterval(() => location.reload(), 300000); // 5 minutos
+    </script>
+
+</body>
+</html>

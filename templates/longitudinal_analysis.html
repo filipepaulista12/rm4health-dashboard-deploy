@@ -1,0 +1,695 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RM4Health - Análise Longitudinal</title>
+    
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Font Awesome -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <!-- Plotly -->
+    <script src="https://cdn.plot.ly/plotly-2.24.1.min.js"></script>
+    
+    <style>
+        :root {
+            --primary-color: #1e3a8a;
+            --secondary-color: #3b82f6;
+            --accent-color: #06b6d4;
+            --success-color: #10b981;
+            --warning-color: #f59e0b;
+            --danger-color: #ef4444;
+            --light-bg: #f8fafc;
+            --card-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        }
+        
+        body {
+            background-color: var(--light-bg);
+            font-family: 'Inter', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 0;
+        }
+        
+        .navbar {
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color)) !important;
+            box-shadow: var(--card-shadow);
+        }
+        
+        .navbar-brand {
+            font-weight: 700;
+            color: white !important;
+        }
+        
+        .main-container {
+            padding: 2rem 0;
+        }
+        
+        .page-header {
+            background: white;
+            border-radius: 12px;
+            padding: 2rem;
+            margin-bottom: 2rem;
+            box-shadow: var(--card-shadow);
+            border-left: 4px solid var(--primary-color);
+        }
+        
+        .page-title {
+            color: var(--primary-color);
+            font-weight: 700;
+            font-size: 2.2rem;
+            margin-bottom: 0.5rem;
+        }
+        
+        .controls-panel {
+            background: white;
+            border-radius: 12px;
+            padding: 1.5rem;
+            margin-bottom: 2rem;
+            box-shadow: var(--card-shadow);
+        }
+        
+        .chart-container {
+            background: white;
+            border-radius: 12px;
+            padding: 1.5rem;
+            margin-bottom: 2rem;
+            box-shadow: var(--card-shadow);
+            min-height: 400px;
+        }
+        
+        .chart-title {
+            color: var(--primary-color);
+            font-weight: 600;
+            font-size: 1.25rem;
+            margin-bottom: 1rem;
+            padding-bottom: 0.5rem;
+            border-bottom: 2px solid #e2e8f0;
+        }
+        
+        .metric-card {
+            background: white;
+            border-radius: 12px;
+            padding: 1.5rem;
+            height: 100%;
+            box-shadow: var(--card-shadow);
+            border-left: 4px solid var(--accent-color);
+            transition: transform 0.2s;
+        }
+        
+        .metric-card:hover {
+            transform: translateY(-2px);
+        }
+        
+        .metric-value {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--primary-color);
+            margin-bottom: 0.5rem;
+        }
+        
+        .metric-label {
+            font-weight: 600;
+            color: #374151;
+            font-size: 0.9rem;
+        }
+        
+        .btn-primary {
+            background-color: var(--secondary-color);
+            border-color: var(--secondary-color);
+            border-radius: 8px;
+            font-weight: 500;
+        }
+        
+        .btn-primary:hover {
+            background-color: var(--primary-color);
+            border-color: var(--primary-color);
+        }
+        
+        .loading-spinner {
+            display: none;
+            text-align: center;
+            padding: 2rem;
+        }
+        
+        .trend-indicator {
+            padding: 0.25rem 0.75rem;
+            border-radius: 12px;
+            font-weight: 600;
+            font-size: 0.8rem;
+        }
+        
+        .trend-improving {
+            background-color: rgba(16, 185, 129, 0.1);
+            color: var(--success-color);
+        }
+        
+        .trend-declining {
+            background-color: rgba(239, 68, 68, 0.1);
+            color: var(--danger-color);
+        }
+        
+        .trend-stable {
+            background-color: rgba(245, 158, 11, 0.1);
+            color: var(--warning-color);
+        }
+        
+        .timeline-container {
+            background: white;
+            border-radius: 12px;
+            padding: 1.5rem;
+            margin-bottom: 2rem;
+            box-shadow: var(--card-shadow);
+        }
+        
+        .timeline-item {
+            border-left: 3px solid var(--accent-color);
+            padding-left: 1rem;
+            margin-bottom: 1rem;
+            position: relative;
+        }
+        
+        .timeline-item:before {
+            content: '';
+            position: absolute;
+            left: -7px;
+            top: 0;
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background-color: var(--accent-color);
+        }
+        
+        .timeline-date {
+            font-weight: 600;
+            color: var(--primary-color);
+            font-size: 0.9rem;
+        }
+        
+        .timeline-value {
+            color: #374151;
+            margin-top: 0.25rem;
+        }
+        
+        .participant-info {
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+            color: white;
+            border-radius: 12px;
+            padding: 1.5rem;
+            margin-bottom: 2rem;
+        }
+        
+        .participant-info h4 {
+            margin-bottom: 1rem;
+        }
+        
+        .participant-info .info-item {
+            margin-bottom: 0.5rem;
+        }
+        
+        .period-selector {
+            margin-bottom: 1rem;
+        }
+        
+        .period-selector .btn {
+            margin-right: 0.5rem;
+            margin-bottom: 0.5rem;
+        }
+        
+        @media (max-width: 768px) {
+            .main-container {
+                padding: 1rem 0;
+            }
+            
+            .page-header {
+                padding: 1.5rem;
+            }
+            
+            .page-title {
+                font-size: 1.8rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Navigation Bar -->
+    <nav class="navbar navbar-expand-lg navbar-dark">
+        <div class="container">
+            <a class="navbar-brand" href="/">
+                <i class="fas fa-heartbeat"></i>
+                RM4Health Dashboard
+            </a>
+            <div class="d-flex">
+                <a href="/" class="btn btn-outline-light btn-sm">
+                    <i class="fas fa-arrow-left"></i> Voltar
+                </a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container main-container">
+        <!-- Page Header -->
+        <div class="page-header">
+            <h1 class="page-title">
+                <i class="fas fa-chart-line me-2"></i>
+                Análise Longitudinal de Pacientes
+            </h1>
+            <p class="text-muted mb-0">
+                Evolução temporal individual dos participantes - Acompanhamento clínico ao longo do tempo
+            </p>
+        </div>
+
+        <!-- Controls Panel -->
+        <div class="controls-panel">
+            <div class="row">
+                <div class="col-lg-4 col-md-6 mb-3">
+                    <label for="participantSelect" class="form-label">
+                        <i class="fas fa-user"></i> Selecionar Participante
+                    </label>
+                    <select class="form-select" id="participantSelect">
+                        <option value="">Escolha um participante...</option>
+                        {% for participant in participants %}
+                        <option value="{{ participant }}">{{ participant }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                
+                <div class="col-lg-4 col-md-6 mb-3">
+                    <label for="fieldSelect" class="form-label">
+                        <i class="fas fa-heartbeat"></i> Métrica Clínica
+                    </label>
+                    <select class="form-select" id="fieldSelect">
+                        <option value="">Selecione uma métrica...</option>
+                        <optgroup label="Métricas de Saúde">
+                            {% for field in clinical_fields.health_metrics %}
+                            <option value="{{ field }}">{{ field|replace('_', ' ')|title }}</option>
+                            {% endfor %}
+                        </optgroup>
+                        <optgroup label="Condições Cardíacas">
+                            {% for field in clinical_fields.cardiac %}
+                            <option value="{{ field }}">{{ field|replace('_', ' ')|title }}</option>
+                            {% endfor %}
+                        </optgroup>
+                        <optgroup label="Questionários">
+                            {% for field in clinical_fields.questionnaires %}
+                            <option value="{{ field }}">{{ field|replace('_', ' ')|title }}</option>
+                            {% endfor %}
+                        </optgroup>
+                    </select>
+                </div>
+                
+                <div class="col-lg-4 col-md-12 mb-3">
+                    <label class="form-label">
+                        <i class="fas fa-calendar"></i> Período
+                    </label>
+                    <div class="period-selector">
+                        <button class="btn btn-outline-primary btn-sm period-btn" data-period="1">1 Mês</button>
+                        <button class="btn btn-outline-primary btn-sm period-btn" data-period="3">3 Meses</button>
+                        <button class="btn btn-outline-primary btn-sm period-btn" data-period="6">6 Meses</button>
+                        <button class="btn btn-primary btn-sm period-btn active" data-period="all">Todos</button>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="row">
+                <div class="col-12">
+                    <button class="btn btn-primary" id="analyzeBtn">
+                        <i class="fas fa-chart-line"></i> Analisar Evolução
+                    </button>
+                    <button class="btn btn-outline-secondary" id="exportBtn" style="display: none;">
+                        <i class="fas fa-download"></i> Exportar Dados
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Participant Info -->
+        <div class="participant-info" id="participantInfo" style="display: none;">
+            <h4><i class="fas fa-user-md"></i> Informações do Participante</h4>
+            <div class="row">
+                <div class="col-md-3">
+                    <div class="info-item">
+                        <strong>Código:</strong> <span id="infoCode">-</span>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="info-item">
+                        <strong>Grupo:</strong> <span id="infoGroup">-</span>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="info-item">
+                        <strong>Idade:</strong> <span id="infoAge">-</span>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="info-item">
+                        <strong>Total Visitas:</strong> <span id="infoVisits">-</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Loading Spinner -->
+        <div class="loading-spinner" id="loadingSpinner">
+            <div class="spinner-border text-primary" role="status">
+                <span class="visually-hidden">Carregando...</span>
+            </div>
+            <p class="mt-2">Processando dados longitudinais...</p>
+        </div>
+
+        <!-- Main Chart -->
+        <div class="chart-container" id="mainChartContainer" style="display: none;">
+            <h3 class="chart-title">
+                <i class="fas fa-chart-line me-2"></i>
+                Evolução Temporal - <span id="currentMetric">Métrica</span>
+                <span class="trend-indicator ms-2" id="trendIndicator"></span>
+            </h3>
+            <div id="temporalChart"></div>
+        </div>
+
+        <!-- Summary Metrics -->
+        <div class="row" id="summaryMetrics" style="display: none;">
+            <div class="col-lg-3 col-md-6 mb-3">
+                <div class="metric-card">
+                    <div class="metric-value" id="totalPoints">-</div>
+                    <div class="metric-label">Pontos de Dados</div>
+                </div>
+            </div>
+            <div class="col-lg-3 col-md-6 mb-3">
+                <div class="metric-card">
+                    <div class="metric-value" id="timeSpan">-</div>
+                    <div class="metric-label">Período Monitorado</div>
+                </div>
+            </div>
+            <div class="col-lg-3 col-md-6 mb-3">
+                <div class="metric-card">
+                    <div class="metric-value" id="avgValue">-</div>
+                    <div class="metric-label">Valor Médio</div>
+                </div>
+            </div>
+            <div class="col-lg-3 col-md-6 mb-3">
+                <div class="metric-card">
+                    <div class="metric-value" id="changePercent">-</div>
+                    <div class="metric-label">Variação Total</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Timeline of Events -->
+        <div class="timeline-container" id="timelineContainer" style="display: none;">
+            <h3 class="chart-title">
+                <i class="fas fa-history me-2"></i>
+                Timeline de Eventos Significativos
+            </h3>
+            <div id="timelineEvents"></div>
+        </div>
+
+        <!-- Instructions -->
+        <div class="chart-container" id="instructionsPanel">
+            <h3 class="chart-title">
+                <i class="fas fa-info-circle me-2"></i>
+                Como Usar a Análise Longitudinal
+            </h3>
+            <div class="row">
+                <div class="col-md-6">
+                    <h5><i class="fas fa-list-ol text-primary me-2"></i>Passos:</h5>
+                    <ol>
+                        <li><strong>Selecione um participante</strong> da lista suspensa</li>
+                        <li><strong>Escolha uma métrica clínica</strong> para análise temporal</li>
+                        <li><strong>Defina o período</strong> de interesse (1, 3, 6 meses ou todos)</li>
+                        <li><strong>Clique em "Analisar Evolução"</strong> para gerar os gráficos</li>
+                    </ol>
+                </div>
+                <div class="col-md-6">
+                    <h5><i class="fas fa-chart-bar text-success me-2"></i>Análises Disponíveis:</h5>
+                    <ul>
+                        <li><strong>Gráfico de linha temporal</strong> com tendências</li>
+                        <li><strong>Indicadores de melhora/piora</strong> com cores</li>
+                        <li><strong>Métricas resumo</strong> do período</li>
+                        <li><strong>Timeline de eventos</strong> significativos</li>
+                        <li><strong>Exportação de dados</strong> para análise externa</li>
+                    </ul>
+                </div>
+            </div>
+            <div class="alert alert-info mt-3">
+                <strong><i class="fas fa-lightbulb"></i> Dica:</strong> 
+                Use esta análise para acompanhar a evolução individual de cada participante e identificar padrões de melhora ou deterioração ao longo do tempo.
+            </div>
+        </div>
+    </div>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <!-- Custom JavaScript -->
+    <script>
+        let currentParticipant = null;
+        let currentField = null;
+        let currentPeriod = 'all';
+        let participantData = null;
+
+        // Event Listeners
+        document.getElementById('analyzeBtn').addEventListener('click', analyzeEvolution);
+        document.getElementById('exportBtn').addEventListener('click', exportData);
+        
+        // Period selector buttons
+        document.querySelectorAll('.period-btn').forEach(btn => {
+            btn.addEventListener('click', function() {
+                document.querySelectorAll('.period-btn').forEach(b => b.classList.remove('active'));
+                this.classList.add('active');
+                currentPeriod = this.dataset.period;
+            });
+        });
+
+        async function analyzeEvolution() {
+            const participantCode = document.getElementById('participantSelect').value;
+            const field = document.getElementById('fieldSelect').value;
+            
+            if (!participantCode) {
+                alert('Por favor, selecione um participante');
+                return;
+            }
+            
+            if (!field) {
+                alert('Por favor, selecione uma métrica clínica');
+                return;
+            }
+
+            currentParticipant = participantCode;
+            currentField = field;
+            
+            // Show loading
+            document.getElementById('loadingSpinner').style.display = 'block';
+            document.getElementById('instructionsPanel').style.display = 'none';
+            
+            try {
+                // Fetch participant data
+                const response = await fetch(`/api/longitudinal-data/${participantCode}`);
+                const data = await response.json();
+                
+                if (data.success) {
+                    participantData = data;
+                    displayParticipantInfo(data.summary);
+                    
+                    // Fetch temporal trends for the specific field
+                    const trendsResponse = await fetch(`/api/temporal-trends/${participantCode}/${field}`);
+                    const trendsData = await trendsResponse.json();
+                    
+                    if (trendsData.success) {
+                        displayTemporalChart(trendsData);
+                        displaySummaryMetrics(trendsData);
+                        displayTimeline(trendsData.values);
+                        document.getElementById('exportBtn').style.display = 'inline-block';
+                    }
+                } else {
+                    throw new Error(data.error || 'Erro ao carregar dados');
+                }
+            } catch (error) {
+                console.error('Erro:', error);
+                alert('Erro ao carregar dados: ' + error.message);
+            } finally {
+                document.getElementById('loadingSpinner').style.display = 'none';
+            }
+        }
+
+        function displayParticipantInfo(summary) {
+            document.getElementById('infoCode').textContent = summary.participant_code || 'N/A';
+            document.getElementById('infoGroup').textContent = summary.group || 'N/A';
+            document.getElementById('infoAge').textContent = summary.age || 'N/A';
+            document.getElementById('infoVisits').textContent = summary.total_visits || 'N/A';
+            
+            document.getElementById('participantInfo').style.display = 'block';
+        }
+
+        function displayTemporalChart(trendsData) {
+            const values = trendsData.values || [];
+            
+            if (values.length === 0) {
+                document.getElementById('mainChartContainer').innerHTML = 
+                    '<div class="alert alert-warning">Não há dados temporais disponíveis para esta métrica.</div>';
+                document.getElementById('mainChartContainer').style.display = 'block';
+                return;
+            }
+
+            // Prepare data for Plotly
+            const dates = values.map(v => v.date);
+            const vals = values.map(v => {
+                const val = v.value;
+                // Try to convert to number if possible
+                if (!isNaN(val) && val !== '') {
+                    return parseFloat(val);
+                }
+                return val;
+            });
+
+            const trace = {
+                x: dates,
+                y: vals,
+                type: 'scatter',
+                mode: 'lines+markers',
+                name: currentField.replace('_', ' '),
+                line: {
+                    color: '#3b82f6',
+                    width: 3
+                },
+                marker: {
+                    color: '#1e3a8a',
+                    size: 8
+                }
+            };
+
+            const layout = {
+                title: false,
+                xaxis: {
+                    title: 'Data',
+                    type: 'date'
+                },
+                yaxis: {
+                    title: currentField.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase())
+                },
+                margin: { t: 20, r: 20, b: 60, l: 80 },
+                plot_bgcolor: 'rgba(0,0,0,0)',
+                paper_bgcolor: 'rgba(0,0,0,0)'
+            };
+
+            Plotly.newPlot('temporalChart', [trace], layout, {responsive: true});
+            
+            // Update metric name and trend
+            document.getElementById('currentMetric').textContent = 
+                currentField.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase());
+            
+            const trendIndicator = document.getElementById('trendIndicator');
+            trendIndicator.className = `trend-indicator trend-${trendsData.trend}`;
+            
+            const trendText = {
+                'improving': '↗️ Melhora',
+                'declining': '↘️ Piora', 
+                'stable': '➡️ Estável'
+            };
+            trendIndicator.textContent = trendText[trendsData.trend] || '➡️ Estável';
+            
+            document.getElementById('mainChartContainer').style.display = 'block';
+        }
+
+        function displaySummaryMetrics(trendsData) {
+            const values = trendsData.values || [];
+            const numericValues = values.map(v => v.value).filter(v => !isNaN(v) && v !== '').map(v => parseFloat(v));
+            
+            document.getElementById('totalPoints').textContent = values.length;
+            
+            if (values.length > 0) {
+                const firstDate = new Date(values[0].date);
+                const lastDate = new Date(values[values.length - 1].date);
+                const daysDiff = Math.ceil((lastDate - firstDate) / (1000 * 60 * 60 * 24));
+                document.getElementById('timeSpan').textContent = `${daysDiff} dias`;
+            }
+            
+            if (numericValues.length > 0) {
+                const avg = numericValues.reduce((a, b) => a + b, 0) / numericValues.length;
+                document.getElementById('avgValue').textContent = avg.toFixed(2);
+                
+                if (numericValues.length > 1) {
+                    const change = ((numericValues[numericValues.length - 1] - numericValues[0]) / numericValues[0] * 100);
+                    document.getElementById('changePercent').textContent = `${change.toFixed(1)}%`;
+                } else {
+                    document.getElementById('changePercent').textContent = 'N/A';
+                }
+            } else {
+                document.getElementById('avgValue').textContent = 'N/A';
+                document.getElementById('changePercent').textContent = 'N/A';
+            }
+            
+            document.getElementById('summaryMetrics').style.display = 'flex';
+        }
+
+        function displayTimeline(values) {
+            const timelineEvents = document.getElementById('timelineEvents');
+            timelineEvents.innerHTML = '';
+            
+            if (values.length === 0) {
+                timelineEvents.innerHTML = '<p class="text-muted">Nenhum evento temporal encontrado.</p>';
+                document.getElementById('timelineContainer').style.display = 'block';
+                return;
+            }
+            
+            // Show only significant events (max 10)
+            const significantEvents = values.slice(-10).reverse();
+            
+            significantEvents.forEach(event => {
+                const timelineItem = document.createElement('div');
+                timelineItem.className = 'timeline-item';
+                
+                const date = new Date(event.date).toLocaleDateString('pt-BR');
+                timelineItem.innerHTML = `
+                    <div class="timeline-date">${date}</div>
+                    <div class="timeline-value">
+                        <strong>${event.field.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase())}:</strong> 
+                        ${event.value}
+                    </div>
+                `;
+                
+                timelineEvents.appendChild(timelineItem);
+            });
+            
+            document.getElementById('timelineContainer').style.display = 'block';
+        }
+
+        function exportData() {
+            if (!participantData || !currentField) {
+                alert('Nenhum dado para exportar');
+                return;
+            }
+            
+            // Create CSV data
+            const csvData = participantData.data.map(record => ({
+                participant_code: currentParticipant,
+                date: record.date,
+                field: record.field,
+                value: record.record[currentField] || ''
+            }));
+            
+            // Convert to CSV string
+            const headers = ['Participant Code', 'Date', 'Field', 'Value'];
+            const csvString = [
+                headers.join(','),
+                ...csvData.map(row => [
+                    row.participant_code,
+                    row.date,
+                    row.field,
+                    row.value
+                ].join(','))
+            ].join('\n');
+            
+            // Download file
+            const blob = new Blob([csvString], { type: 'text/csv' });
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `longitudinal_${currentParticipant}_${currentField}_${new Date().toISOString().split('T')[0]}.csv`;
+            a.click();
+            window.URL.revokeObjectURL(url);
+        }
+    </script>
+</body>
+</html>
