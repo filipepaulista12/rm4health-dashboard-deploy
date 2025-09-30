@@ -1,169 +1,135 @@
-# RM4Health Dashboard
+﻿# RM4Health Dashboard - Repositório de Deploy
 
-Um dashboard interativo para análise de dados do projeto RM4Health, desenvolvido com Flask e integração com REDCap API.
+Sistema de dashboard para análise de dados do projeto RM4Health com integração REDCap.
 
-## ✅ VERSÃO FUNCIONANDO GARANTIDA! 🚀
+##  Características
 
-**Data**: 28 de Agosto de 2025  
-**Commit**: 3740954b87737a93e47aa0dcd6ed7add5fa1bc43  
-**Tag**: v2.0-FUNCIONANDO  
-**Branch**: versao-funcionando-garantida  
+- **Dashboard Web Flask** com interface responsiva
+- **Integração REDCap** para dados em tempo real
+- **Análises Avançadas** incluindo:
+  - Domínios de saúde RM4Health
+  - Análise de sono
+  - Aderência medicamentosa
+  - Explorador de dados interativo
+  - Alertas clínicos
+  - Analytics avançados
+- **Dados Locais** como fallback
+- **596 registros** carregados e analisados
 
-**Status**: ✅ 100% FUNCIONANDO COM DADOS REAIS!
-- 🔗 API REDCap conectada: https://redcap.med.up.pt/redcap/api/
-- 📊 596 registros processados com sucesso
-- 🎯 Todos os dashboards operacionais
-- 🏥 Interface completa e responsiva
+##  Pré-requisitos
 
-## 🎯 Funcionalidades
-
-### Análises Disponíveis
-
-1. **📊 Dashboard Principal**
-   - Visão geral dos participantes
-   - Estatísticas básicas do projeto
-   - Navegação para análises específicas
-
-2. **💤 Análise do Sono**
-   - Padrões de sono dos participantes
-   - Qualidade do sono por grupo
-   - Visualizações interativas
-
-3. **💊 Aderência à Medicação**
-   - Análise de aderência medicamentosa
-   - Comparações por grupo
-   - Identificação de padrões
-
-4. **🏥 Utilização de Cuidados de Saúde**
-   - Análise de uso de serviços de saúde
-   - Padrões de utilização por grupo
-   - Métricas de acesso
-
-5. **👥 Análise de Cuidadores**
-   - Dados sobre cuidadores informais
-   - Impacto no cuidado
-   - Correlações importantes
-
-6. **🔍 Qualidade dos Dados**
-   - Análise de completude dos dados
-   - Identificação de dados em falta
-   - Recomendações de qualidade
-   - Verificações de consistência temporal
-
-## 🚀 Instalação e Configuração
-
-### Pré-requisitos
 - Python 3.8+
-- Acesso à API do REDCap
-- Token de API válido
+- Acesso à API REDCap (opcional, funciona com dados locais)
 
-### Instalação
+##  Instalação
 
-1. Clone o repositório:
-```bash
+1. **Clone o repositório:**
+`ash
 git clone https://github.com/filipepaulista12/rm4health-dashboard-deploy.git
 cd rm4health-dashboard-deploy
-```
+`
 
-2. Crie um ambiente virtual:
-```bash
-python -m venv venv
-source venv/bin/activate  # Linux/Mac
+2. **Crie um ambiente virtual:**
+`ash
+python -m venv .venv
+.venv\Scripts\activate  # Windows
 # ou
-venv\Scripts\activate  # Windows
-```
+source .venv/bin/activate  # Linux/Mac
+`
 
-3. Instale as dependências:
-```bash
+3. **Instale as dependências:**
+`ash
 pip install -r requirements.txt
-```
+`
 
-4. Configure o arquivo `config.py`:
-```python
-# Substitua pelos seus dados
-REDCAP_URL = "sua_url_redcap"
-REDCAP_TOKEN = "seu_token_aqui"
-```
+4. **Configure as variáveis de ambiente:**
+`ash
+# Copie o arquivo de exemplo
+cp .env.example .env
 
-5. Execute a aplicação:
-```bash
+# Edite o arquivo .env com suas configurações
+# REDCAP_URL=https://sua-instancia-redcap.com/api/
+# REDCAP_TOKEN=seu_token_aqui
+`
+
+##  Execução
+
+### Método 1: Script automatizado
+`ash
+# Execute o script batch (Windows)
+EXECUTAR_DASHBOARD.bat
+`
+
+### Método 2: Manual
+`ash
+# Ative o ambiente virtual
+.venv\Scripts\activate
+
+# Execute o dashboard
 python app.py
-```
+`
 
-6. Acesse no navegador:
-```
-http://localhost:5000
-```
+##  Acesso
 
-## 📁 Estrutura do Projeto
+Após iniciar, o dashboard estará disponível em:
+- **Local:** http://127.0.0.1:5000
+- **Rede local:** http://[SEU_IP]:5000
 
-```
-├── app.py                 # Aplicação principal Flask
-├── config.py             # Configurações da aplicação
-├── data_processor.py     # Processamento de dados REDCap
-├── redcap_client.py      # Cliente para API REDCap
-├── requirements.txt      # Dependências Python
-├── static/              # Arquivos CSS, JS, imagens
-│   ├── css/
-│   └── js/
-├── templates/           # Templates HTML
-│   ├── dashboard.html
-│   ├── sleep_analysis.html
-│   ├── medication_adherence.html
-│   ├── healthcare_utilization.html
-│   ├── caregiver_analysis.html
-│   └── data_quality.html
-└── README.md
-```
+##  Funcionalidades
 
-## 🔧 Configuração
+### Páginas Disponíveis:
+- **Dashboard Principal** - Visão geral dos dados
+- **Domínios RM4Health** - Análise específica dos domínios de saúde
+- **Participantes** - Gestão e visualização de participantes
+- **Análise do Sono** - Métricas e padrões de sono
+- **Aderência Medicamentosa** - Monitoramento de medicação
+- **Explorador de Dados** - Interface interativa para exploração
+- **Alertas Clínicos** - Sistema de alertas baseado em dados
+- **Analytics** - Análises estatísticas avançadas
 
-### Variáveis de Ambiente
-Crie um arquivo `.env` (opcional) ou configure diretamente no `config.py`:
+##  Segurança
 
-- `REDCAP_URL`: URL da sua instância REDCap
-- `REDCAP_TOKEN`: Token de API do projeto RM4Health
+- **Tokens e credenciais** são gerenciados via variáveis de ambiente
+- **Dados sensíveis** não são commitados no repositório
+- **Fallback local** para funcionamento sem API externa
 
-### Personalização
-O dashboard pode ser personalizado editando:
-- Templates HTML em `templates/`
-- Estilos CSS em `static/css/`
-- Lógica de análise em `data_processor.py`
+##  Desenvolvimento
 
-## 📊 Dados Suportados
+### Estrutura do Projeto:
+`
+rm4health-dashboard-deploy/
+ app.py                      # Aplicação Flask principal
+ config.py                   # Configurações
+ redcap_client.py           # Cliente REDCap
+ templates/                  # Templates HTML
+ static/                     # Arquivos estáticos
+ .env.example               # Exemplo de configuração
+ local_data_config.json     # Dados locais
+ EXECUTAR_DASHBOARD.bat     # Script de execução
+ requirements.txt           # Dependências Python
+ README.md                  # Este arquivo
+`
 
-O dashboard funciona com dados do projeto RM4Health que incluem:
-- Dados demográficos dos participantes
-- Informações sobre sono e atividade
-- Dados de medicação
-- Registros de utilização de cuidados de saúde
-- Informações sobre cuidadores
+##  Logs e Debug
 
-## 🔒 Segurança
+O sistema inclui logs detalhados:
+-  Inicialização de componentes
+-  Status de conexões
+-  Carregamento de dados
+-  Avisos e erros
 
-- Nunca commit seu token REDCap
-- Use variáveis de ambiente em produção
-- Configure adequadamente as permissões de API
-- Monitore o acesso aos dados
+##  Contribuição
 
-## 🤝 Contribuição
-
-1. Faça fork do projeto
-2. Crie uma branch para sua feature (`git checkout -b feature/AmazingFeature`)
-3. Commit suas mudanças (`git commit -m 'Add some AmazingFeature'`)
-4. Push para a branch (`git push origin feature/AmazingFeature`)
+1. Fork o projeto
+2. Crie uma branch para sua feature
+3. Commit suas mudanças
+4. Push para a branch
 5. Abra um Pull Request
 
-## 📄 Licença
+##  Licença
 
-Este projeto está sob licença MIT. Veja o arquivo `LICENSE` para detalhes.
-
-## 📞 Suporte
-
-Para questões sobre o projeto RM4Health ou uso do dashboard:
-- Abra uma issue no GitHub
-- Entre em contato com a equipe de desenvolvimento
+Este projeto está sob licença [Especificar Licença].
 
 ---
 
-**Desenvolvido para o Projeto RM4Health** 🏥✨
+**Desenvolvido para o projeto RM4Health - FMUP**
