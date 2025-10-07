@@ -10,6 +10,35 @@ class DataProcessor:
     def __init__(self, data):
         self.data = data if data else []
         self.processed_data = self.data.copy()
+        # Criar mapeamento de grupos uma vez no init
+        self._participant_to_group = self._build_group_mapping()
+    
+    def _build_group_mapping(self):
+        """Constrói mapeamento participant_code -> group a partir dos registros baseline"""
+        mapping = {}
+        for record in self.data:
+            if not record.get('redcap_repeat_instrument'):  # É baseline
+                participant = record.get('participant_code')
+                group = record.get('participant_group')
+                if participant and group:
+                    mapping[participant] = group
+        return mapping
+    
+    def get_participant_group(self, record_or_participant_code):
+        """Retorna o grupo de um participante usando o mapeamento correto
+        
+        Args:
+            record_or_participant_code: Pode ser um dict (record) ou string (participant_code)
+        
+        Returns:
+            str: Grupo do participante ou 'Não especificado' se não encontrado
+        """
+        if isinstance(record_or_participant_code, dict):
+            participant_code = record_or_participant_code.get('participant_code')
+        else:
+            participant_code = record_or_participant_code
+        
+        return self._participant_to_group.get(participant_code, 'Não especificado')
     
     def get_basic_stats(self):
         """Retorna estatísticas básicas do dataset"""
@@ -378,8 +407,9 @@ class DataProcessor:
                 filtered_data = [r for r in filtered_data 
                                if r.get('redcap_repeat_instrument', 'baseline') == filter_value]
             elif filter_name == 'group':
+                # Usar mapeamento correto de grupos
                 filtered_data = [r for r in filtered_data 
-                               if r.get('participant_group') == filter_value]
+                               if self.get_participant_group(r) == filter_value]
             elif filter_name == 'participant':
                 filtered_data = [r for r in filtered_data 
                                if r.get('participant_code') == filter_value]
@@ -416,8 +446,8 @@ class DataProcessor:
                     instruments[instrument] = []
                 instruments[instrument].append(value)
                 
-                # Por grupo
-                group = record.get('participant_group', 'N/A')
+                # Por grupo - usar mapeamento correto
+                group = self.get_participant_group(record)
                 if group not in groups:
                     groups[group] = []
                 groups[group].append(value)
@@ -3780,28 +3810,25 @@ class DataProcessor:
         print(f"🔍 DEBUG _classify_by_residence: Iniciando classificação com {len(data_df)} participantes")
         
         for _, participant in data_df.iterrows():
-            participant_id = participant.get('participant_code_estudo', 'N/A')
+            participant_id = participant.get('participant_code_estudo') or participant.get('participant_code', 'N/A')
             
-            # Usar o campo correto do REDCap: participant_group
-            if 'participant_group' in participant and pd.notna(participant['participant_group']):
-                value = str(participant['participant_group']).strip().lower()
-                print(f"🏠 DEBUG: Participante {participant_id} - grupo: '{value}'")
-                
-                # 'a' = Residente (Grupo A)
-                if value == 'a':
-                    residents.append(participant)
-                    print(f"   ✅ Adicionado como RESIDENTE")
-                # 'b' = Não-Residente (Grupo B) 
-                elif value == 'b':
-                    non_residents.append(participant)
-                    print(f"   🏠 Adicionado como NÃO-RESIDENTE")
-                else:
-                    print(f"   ⚪ Ignorado (grupo '{value}')")
-                # Grupos C e D são cuidadores, não contam para esta análise
-                # Participantes sem valor também são ignorados
+            # Usar mapeamento correto de grupos
+            group = self.get_participant_group(participant_id)
+            value = str(group).strip().lower()
+            
+            print(f"🏠 DEBUG: Participante {participant_id} - grupo: '{value}'")
+            
+            # 'a' = Residente (Grupo A)
+            if value == 'a':
+                residents.append(participant)
+                print(f"   ✅ Adicionado como RESIDENTE")
+            # 'b' = Não-Residente (Grupo B) 
+            elif value == 'b':
+                non_residents.append(participant)
+                print(f"   🏠 Adicionado como NÃO-RESIDENTE")
             else:
-                group_val = participant.get('participant_group', 'NULL')
-                print(f"🏠 DEBUG: Participante {participant_id} - grupo inválido: '{group_val}' - IGNORADO")
+                print(f"   ⚪ Ignorado (grupo '{value}')")
+            # Grupos C e D são cuidadores, não contam para esta análise
         
         print(f"🔍 DEBUG _classify_by_residence: RESULTADO FINAL - {len(residents)} residentes, {len(non_residents)} não-residentes")
         return residents, non_residents
