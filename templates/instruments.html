@@ -26,73 +26,29 @@
     </nav>
 
     <div class="container mt-4">
-        <div class="row">
+        <div class="row mb-4">
             <div class="col-12">
-                <h2><i class="bi bi-clipboard-data text-primary"></i> Análise por Instrumentos</h2>
-                <p class="text-muted">Análise detalhada dos formulários e questionários do estudo RM4Health</p>
-                
-                <!-- Explicação para leigos -->
-                <div class="alert alert-info mb-4">
-                    <h5><i class="bi bi-info-circle"></i> O que são Instrumentos de Avaliação?</h5>
-                    <p class="mb-2"><strong>Para leigos:</strong> Os instrumentos são questionários ou escalas científicas validadas que usamos para medir diferentes aspetos da saúde dos participantes de forma objetiva e padronizada.</p>
-                    
-                    <div class="row">
-                        <div class="col-md-6">
-                            <h6><i class="bi bi-clipboard-check text-primary"></i> Tipos de Instrumentos no RM4Health:</h6>
-                            <ul class="mb-0">
-                                <li><strong>Funcionais:</strong> Avaliam independência nas atividades diárias (ex: Barthel)</li>
-                                <li><strong>Qualidade de Vida:</strong> Medem bem-estar geral (ex: EQ-5D)</li>
-                                <li><strong>Sono:</strong> Analisam qualidade do sono (ex: Pittsburgh)</li>
-                                <li><strong>Socioeconómicos:</strong> Caracterizam perfil social e económico</li>
-                            </ul>
-                        </div>
-                        <div class="col-md-6">
-                            <h6><i class="bi bi-graph-up text-success"></i> Como Interpretar os Dados:</h6>
-                            <ul class="mb-0">
-                                <li><strong>Taxa de Participação:</strong> % de pessoas que responderam</li>
-                                <li><strong>Completude:</strong> Se os questionários foram totalmente preenchidos</li>
-                                <li><strong>Distribuição:</strong> Como os dados se espalham pelos participantes</li>
-                                <li><strong>Qualidade:</strong> Se as respostas fazem sentido e são válidas</li>
-                            </ul>
-                        </div>
-                    </div>
-                </div>
+                <h2><i class="bi bi-clipboard-data text-primary"></i> Instrumentos de Avaliação</h2>
+                <p class="text-muted">Distribuição de registos por questionário aplicado no estudo</p>
             </div>
         </div>
 
         {% if success and instruments %}
-        <!-- Resumo Geral -->
-        <div class="row mb-4">
-            <div class="col-12">
-                <h3><i class="bi bi-bar-chart text-primary"></i> Resumo Geral dos Instrumentos</h3>
-                <div class="alert alert-light border">
-                    <p class="mb-2"><strong>💡 Para leigos:</strong> Estas métricas mostram a "saúde" geral da recolha de dados do estudo.</p>
-                    <ul class="mb-0">
-                        <li><strong>Instrumentos Ativos:</strong> Quantos questionários diferentes estamos a usar</li>
-                        <li><strong>Total de Registros:</strong> Quantas vezes os questionários foram preenchidos</li>
-                        <li><strong>Total de Participações:</strong> Quantos participantes únicos responderam</li>
-                        <li><strong>Média por Instrumento:</strong> Em média, quantas respostas cada questionário tem</li>
-                    </ul>
-                </div>
-            </div>
-        </div>
-        
+        <!-- Cards de Resumo -->
         <div class="row mb-4">
             <div class="col-md-3">
                 <div class="card bg-primary text-white">
-                    <div class="card-body text-center">
-                        <h3>{{ instruments|length }}</h3>
-                        <p class="mb-1">Instrumentos Ativos</p>
-                        <small>{% if instruments|length >= 10 %}Excelente diversidade{% elif instruments|length >= 5 %}Boa cobertura{% else %}Limitado{% endif %}</small>
+                    <div class="card-body text-center py-3">
+                        <h3 class="mb-1">{{ instruments|length }}</h3>
+                        <small>Instrumentos</small>
                     </div>
                 </div>
             </div>
             <div class="col-md-3">
                 <div class="card bg-info text-white">
-                    <div class="card-body text-center">
-                        <h3>{{ instruments.values() | map(attribute='total_records') | sum }}</h3>
-                        <p class="mb-1">Total de Registros</p>
-                        <small>{% set total = instruments.values() | map(attribute='total_records') | sum %}{% if total >= 500 %}Volume alto{% elif total >= 200 %}Volume moderado{% else %}Volume baixo{% endif %}</small>
+                    <div class="card-body text-center py-3">
+                        <h3 class="mb-1">{{ instruments.values() | map(attribute='total_records') | sum }}</h3>
+                        <small>Total Registos</small>
                     </div>
                 </div>
             </div>
@@ -150,68 +106,10 @@
                         </div>
                     </div>
                     <div class="card-body">
-                        <!-- Explicação para leigos de cada instrumento -->
-                        <div class="alert alert-light border-start border-primary border-3 mb-3">
-                            <div class="row">
-                                <div class="col-md-8">
-                                    <h6><i class="bi bi-lightbulb text-primary"></i> O que este instrumento avalia:</h6>
-                                    {% if 'barthel' in instrument_key.lower() %}
-                                    <p class="mb-1"><strong>Índice de Barthel:</strong> Mede a independência nas atividades básicas da vida diária como comer, vestir-se, tomar banho, caminhar e usar o banheiro. Pontuação de 0-100.</p>
-                                    <small class="text-muted">🎯 Útil para: Avaliar se a pessoa consegue cuidar de si mesma no dia a dia</small>
-                                    {% elif 'eq5d' in instrument_key.lower() %}
-                                    <p class="mb-1"><strong>EQ-5D:</strong> Avalia qualidade de vida em 5 dimensões: mobilidade, cuidados pessoais, atividades habituais, dor/mal-estar e ansiedade/depressão.</p>
-                                    <small class="text-muted">🎯 Útil para: Medir o bem-estar geral e impacto da doença na vida</small>
-                                    {% elif 'pittsburgh' in instrument_key.lower() or 'sono' in instrument_key.lower() %}
-                                    <p class="mb-1"><strong>Índice de Qualidade do Sono de Pittsburgh:</strong> Avalia a qualidade do sono, latência, duração, eficiência e distúrbios do sono.</p>
-                                    <small class="text-muted">🎯 Útil para: Identificar problemas de sono que afetam a saúde</small>
-                                    {% elif 'caracterizacao' in instrument_key.lower() %}
-                                    <p class="mb-1"><strong>Caracterização Socioeconómica:</strong> Recolhe informações sobre educação, profissão, rendimento, habitação e situação familiar.</p>
-                                    <small class="text-muted">🎯 Útil para: Entender o contexto social que influencia a saúde</small>
-                                    {% elif 'preferencias' in instrument_key.lower() %}
-                                    <p class="mb-1"><strong>Preferências e Hábitos:</strong> Avalia rotinas diárias, atividades preferidas e padrões de comportamento.</p>
-                                    <small class="text-muted">🎯 Útil para: Personalizar cuidados baseados nos gostos da pessoa</small>
-                                    {% elif 'medicacao' in instrument_key.lower() %}
-                                    <p class="mb-1"><strong>Adesão à Medicação:</strong> Monitoriza se a pessoa toma os medicamentos corretamente e como se sente.</p>
-                                    <small class="text-muted">🎯 Útil para: Garantir que o tratamento está a ser seguido</small>
-                                    {% elif 'utilizacao' in instrument_key.lower() and 'servicos' in instrument_key.lower() %}
-                                    <p class="mb-1"><strong>Utilização de Serviços:</strong> Regista consultas médicas, idas ao hospital, emergências e outros cuidados de saúde.</p>
-                                    <small class="text-muted">🎯 Útil para: Analisar custos e necessidades de cuidados</small>
-                                    {% elif 'tecnologias' in instrument_key.lower() %}
-                                    <p class="mb-1"><strong>Tecnologias de Saúde:</strong> Avalia familiaridade com dispositivos como tensiómetros, glicómetros, aplicações móveis.</p>
-                                    <small class="text-muted">🎯 Útil para: Implementar soluções tecnológicas adequadas</small>
-                                    {% elif 'participante' in instrument_key.lower() %}
-                                    <p class="mb-1"><strong>Dados do Participante:</strong> Informações básicas como idade, sexo, diagnósticos e grupo de estudo.</p>
-                                    <small class="text-muted">🎯 Útil para: Caracterizar a amostra do estudo</small>
-                                    {% else %}
-                                    <p class="mb-1"><strong>{{ instrument_data.name }}:</strong> Instrumento de avaliação validado para medir aspetos específicos da saúde e bem-estar.</p>
-                                    <small class="text-muted">🎯 Útil para: Recolher dados objetivos e comparáveis</small>
-                                    {% endif %}
-                                </div>
-                                <div class="col-md-4">
-                                    <h6><i class="bi bi-speedometer2 text-success"></i> Performance deste instrumento:</h6>
-                                    {% set participation_rate = (instrument_data.unique_participants / 23 * 100) if 23 > 0 else 0 %}
-                                    {% if participation_rate >= 80 %}
-                                    <span class="badge bg-success">Excelente - {{ participation_rate|round(1) }}% participação</span>
-                                    <p class="small mt-1">Quase todos os participantes responderam!</p>
-                                    {% elif participation_rate >= 60 %}
-                                    <span class="badge bg-warning">Bom - {{ participation_rate|round(1) }}% participação</span>
-                                    <p class="small mt-1">A maioria dos participantes respondeu.</p>
-                                    {% elif participation_rate >= 40 %}
-                                    <span class="badge bg-orange">Moderado - {{ participation_rate|round(1) }}% participação</span>
-                                    <p class="small mt-1">Cerca de metade dos participantes respondeu.</p>
-                                    {% else %}
-                                    <span class="badge bg-danger">Baixo - {{ participation_rate|round(1) }}% participação</span>
-                                    <p class="small mt-1">Poucos participantes responderam.</p>
-                                    {% endif %}
-                                </div>
-                            </div>
-                        </div>
-                        
                         <div class="row">
                             <!-- Lista de Participantes -->
-                            <div class="col-md-6">
-                                <h6><i class="bi bi-people"></i> Participantes ({{ instrument_data.unique_participants }})</h6>
-                                <p class="small text-muted mb-2">💡 Lista dos códigos dos participantes que responderam a este questionário:</p>
+                            <div class="col-md-4">
+                                <h6><i class="bi bi-people"></i> Participantes</h6>
                                 <div class="border rounded p-2" style="max-height: 150px; overflow-y: auto;">
                                     {% for participant in instrument_data.participants_list %}
                                     <span class="badge bg-light text-dark me-1 mb-1">{{ participant }}</span>
@@ -220,12 +118,11 @@
                             </div>
                             
                             <!-- Campos mais preenchidos -->
-                            <div class="col-md-6">
-                                <h6><i class="bi bi-check-square"></i> Campos Mais Preenchidos</h6>
-                                <p class="small text-muted mb-2">💡 Perguntas que mais participantes responderam (maior adesão):</p>
+                            <div class="col-md-4">
+                                <h6><i class="bi bi-check-square"></i> Campos Principais</h6>
                                 <div class="border rounded p-2" style="max-height: 150px; overflow-y: auto;">
                                     {% for field, count in instrument_data.top_fields.items() %}
-                                    {% if loop.index <= 8 %}
+                                    {% if loop.index <= 5 %}
                                     <div class="d-flex justify-content-between align-items-center mb-1">
                                         <small>{{ field[:30] }}{% if field|length > 30 %}...{% endif %}</small>
                                         <span class="badge bg-secondary">{{ count }}</span>
@@ -234,111 +131,28 @@
                                     {% endfor %}
                                 </div>
                             </div>
-                        </div>
-                        
-                        <!-- Taxa de Preenchimento por Participante -->
-                        <div class="mt-3">
-                            <h6><i class="bi bi-graph-up"></i> Engajamento dos Participantes</h6>
-                            <p class="small text-muted mb-2">💡 Percentagem de participantes do estudo que responderam a este questionário:</p>
-                            <div class="progress-stacked">
+                            
+                            <!-- Taxa de Participação -->
+                            <div class="col-md-4">
+                                <h6><i class="bi bi-graph-up"></i> Taxa de Participação</h6>
                                 {% set participation_rate = (instrument_data.unique_participants / 23 * 100) if 23 > 0 else 0 %}
                                 <div class="progress" style="height: 20px;">
-                                    <div class="progress-bar bg-success" 
-                                         style="width: {{ participation_rate }}%" 
-                                         title="Taxa de participação: {{ participation_rate|round(1) }}%">
-                                        {{ participation_rate|round(1) }}% dos participantes
+                                    <div class="progress-bar 
+                                        {% if participation_rate >= 80 %}bg-success
+                                        {% elif participation_rate >= 60 %}bg-warning
+                                        {% else %}bg-danger{% endif %}" 
+                                         style="width: {{ participation_rate }}%">
+                                        {{ participation_rate|round(1) }}%
                                     </div>
                                 </div>
+                                <small class="text-muted mt-1 d-block">{{ instrument_data.unique_participants }} de 23 participantes</small>
                             </div>
-                            {% if participation_rate >= 80 %}
-                            <small class="text-success">✅ Excelente adesão! Este instrumento teve muito sucesso.</small>
-                            {% elif participation_rate >= 60 %}
-                            <small class="text-warning">⚠️ Boa adesão, mas pode melhorar.</small>
-                            {% else %}
-                            <small class="text-danger">🔍 Baixa adesão - precisa investigar porquê.</small>
-                            {% endif %}
                         </div>
                     </div>
                 </div>
             </div>
         </div>
         {% endfor %}
-
-        <!-- Análise Metodológica e Recomendações -->
-        <div class="row mb-4">
-            <div class="col-12">
-                <div class="card border-primary">
-                    <div class="card-header bg-primary text-white">
-                        <h5 class="mb-0"><i class="bi bi-mortarboard"></i> Análise Metodológica e Recomendações Científicas</h5>
-                    </div>
-                    <div class="card-body">
-                        <div class="alert alert-info">
-                            <h6><i class="bi bi-info-circle"></i> Como foi calculado (Metodologia Científica):</h6>
-                            <ol>
-                                <li><strong>Identificação de Instrumentos:</strong> Análise de campos "*_complete" nos dados REDCap para identificar questionários únicos</li>
-                                <li><strong>Taxa de Participação:</strong> (Participantes únicos por instrumento ÷ Total de participantes) × 100</li>
-                                <li><strong>Qualidade dos Dados:</strong> Análise de completude baseada em valores '2' (completo) vs '1' (incompleto) ou '0' (não iniciado)</li>
-                                <li><strong>Distribuição de Campos:</strong> Contagem de frequência de preenchimento por variável</li>
-                            </ol>
-                        </div>
-                        
-                        <div class="row">
-                            <div class="col-md-6">
-                                <h6><i class="bi bi-check-circle text-success"></i> Pontos Fortes Identificados:</h6>
-                                <ul>
-                                    {% set total_instruments = instruments|length %}
-                                    {% set avg_participation = (instruments.values() | map(attribute='unique_participants') | sum) / total_instruments if total_instruments > 0 else 0 %}
-                                    {% if total_instruments >= 8 %}
-                                    <li>✅ <strong>Diversidade excelente:</strong> {{ total_instruments }} instrumentos cobrem múltiplas dimensões da saúde</li>
-                                    {% endif %}
-                                    {% if avg_participation >= 15 %}
-                                    <li>✅ <strong>Boa adesão:</strong> Média de {{ avg_participation|round(1) }} participantes por instrumento</li>
-                                    {% endif %}
-                                    <li>✅ <strong>Validação científica:</strong> Uso de instrumentos padronizados e validados</li>
-                                    <li>✅ <strong>Abordagem multidimensional:</strong> Avaliação funcional, qualidade de vida, sono e fatores sociais</li>
-                                </ul>
-                            </div>
-                            <div class="col-md-6">
-                                <h6><i class="bi bi-exclamation-triangle text-warning"></i> Recomendações para Melhoria:</h6>
-                                <ul>
-                                    {% if avg_participation < 20 %}
-                                    <li>⚠️ <strong>Aumentar adesão:</strong> Implementar estratégias para aumentar participação</li>
-                                    {% endif %}
-                                    <li>📊 <strong>Monitorização contínua:</strong> Acompanhar taxas de completude em tempo real</li>
-                                    <li>🎯 <strong>Priorização:</strong> Focar nos instrumentos com menor adesão</li>
-                                    <li>📱 <strong>Tecnologia:</strong> Considerar interfaces mais user-friendly</li>
-                                    <li>👥 <strong>Formação:</strong> Treinar equipa para melhor suporte aos participantes</li>
-                                </ul>
-                            </div>
-                        </div>
-                        
-                        <div class="mt-3">
-                            <h6><i class="bi bi-journal-medical text-primary"></i> Referências Científicas para esta Análise:</h6>
-                            <div class="small">
-                                <p class="mb-1">📖 <strong>Proctor, E. et al. (2011).</strong> Outcomes for implementation research: conceptual distinctions, measurement challenges, and research agenda. <em>Administration and Policy in Mental Health</em>, 38(2), 65-76. <a href="https://doi.org/10.1007/s10488-010-0319-7" target="_blank" class="text-decoration-none">DOI: 10.1007/s10488-010-0319-7</a></p>
-                                <p class="mb-1">📖 <strong>Harris, P.A. et al. (2009).</strong> Research electronic data capture (REDCap) - A metadata-driven methodology and workflow process for providing translational research informatics support. <em>Journal of Biomedical Informatics</em>, 42(2), 377-381.</p>
-                                <p class="mb-0">📖 <strong>Kahn, M.G. et al. (2016).</strong> A Harmonized Data Quality Assessment Terminology and Framework for the Secondary Use of Electronic Health Record Data. <em>EGEMS</em>, 4(1), 1244.</p>
-                            </div>
-                        </div>
-                        
-                        <div class="mt-3 p-3 bg-light rounded">
-                            <h6><i class="bi bi-lightbulb text-warning"></i> Interpretação para Tomada de Decisões:</h6>
-                            {% set overall_quality = (instruments.values() | map(attribute='unique_participants') | sum) / (total_instruments * 23) * 100 if total_instruments > 0 else 0 %}
-                            {% if overall_quality >= 80 %}
-                            <p class="mb-1"><strong>🏆 EXCELENTE:</strong> O estudo tem dados de alta qualidade com boa representatividade. Adequado para análises robustas e publicações científicas.</p>
-                            {% elif overall_quality >= 60 %}
-                            <p class="mb-1"><strong>✅ BOM:</strong> O estudo tem dados sólidos mas com margem para melhorias. Adequado para a maioria das análises planeadas.</p>
-                            {% elif overall_quality >= 40 %}
-                            <p class="mb-1"><strong>⚠️ MODERADO:</strong> Os dados são utilizáveis mas precisam de estratégias para melhorar a completude e representatividade.</p>
-                            {% else %}
-                            <p class="mb-1"><strong>🔍 ATENÇÃO:</strong> A qualidade dos dados precisa melhorias significativas antes de análises conclusivas.</p>
-                            {% endif %}
-                            <small class="text-muted">Qualidade geral calculada: {{ overall_quality|round(1) }}% (baseada na participação média ponderada)</small>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
 
         {% else %}
         <!-- Estado de erro -->
