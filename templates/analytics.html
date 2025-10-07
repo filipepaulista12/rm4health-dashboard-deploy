@@ -454,8 +454,14 @@
                                     <div class="col-md-6">
                                         <ul class="mb-0 small">
                                             <li><strong>Completude média:</strong> {{ avg_completion|round(1) }}%</li>
-                                            <li><strong>Campo mais completo:</strong> {{ field_items | sort(attribute='1.percentage', reverse=true) | first | attr('1.percentage') | round(1) }}%</li>
-                                            <li><strong>Campo menos completo:</strong> {{ field_items | sort(attribute='1.percentage') | first | attr('1.percentage') | round(1) }}%</li>
+                                            <li><strong>Campo mais completo:</strong> 
+                                                {% set best_field = field_items | sort(attribute='1.percentage', reverse=true) | first %}
+                                                {% if best_field %}{{ best_field[1].percentage|round(1) }}%{% else %}N/A{% endif %}
+                                            </li>
+                                            <li><strong>Campo menos completo:</strong> 
+                                                {% set worst_field = field_items | sort(attribute='1.percentage') | first %}
+                                                {% if worst_field %}{{ worst_field[1].percentage|round(1) }}%{% else %}N/A{% endif %}
+                                            </li>
                                         </ul>
                                     </div>
                                     <div class="col-md-6">
