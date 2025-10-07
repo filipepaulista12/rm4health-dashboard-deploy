@@ -33,38 +33,10 @@
     </nav>
 
     <div class="container mt-4">
-        <div class="row">
+        <div class="row mb-4">
             <div class="col-12">
-                <h2><i class="bi bi-graph-up text-primary"></i> Análises Avançadas</h2>
-                <p class="text-muted">Análises detalhadas dos dados RM4Health para identificar padrões e responder perguntas do estudo</p>
-                
-                <!-- Explicação para leigos -->
-                <div class="alert alert-info mb-4">
-                    <h5><i class="bi bi-info-circle"></i> O que são Análises Avançadas?</h5>
-                    <div class="row">
-                        <div class="col-md-8">
-                            <p class="mb-2"><strong>Para leigos:</strong> As análises avançadas são técnicas estatísticas e computacionais que nos permitem extrair informações valiosas dos dados recolhidos, identificar padrões ocultos e responder às perguntas da investigação científica.</p>
-                            
-                            <h6><i class="bi bi-lightbulb text-primary"></i> O que analisamos:</h6>
-                            <ul class="mb-2">
-                                <li><strong>Completude dos Dados:</strong> Verificamos se os participantes preencheram todos os campos necessários</li>
-                                <li><strong>Distribuição por Instrumentos:</strong> Analisamos quais questionários têm mais respostas</li>
-                                <li><strong>Padrões Temporais:</strong> Identificamos tendências ao longo do tempo</li>
-                                <li><strong>Comparações entre Grupos:</strong> Verificamos diferenças entre participantes</li>
-                            </ul>
-                        </div>
-                        <div class="col-md-4">
-                            <h6><i class="bi bi-target text-success"></i> Objetivos das Análises:</h6>
-                            <ul class="mb-0">
-                                <li>🎯 Validar hipóteses científicas</li>
-                                <li>📊 Identificar fatores de risco</li>
-                                <li>🔍 Descobrir padrões inesperados</li>
-                                <li>📈 Medir eficácia de intervenções</li>
-                                <li>⚠️ Detectar problemas nos dados</li>
-                            </ul>
-                        </div>
-                    </div>
-                </div>
+                <h2><i class="bi bi-graph-up text-primary"></i> Visão Geral dos Dados</h2>
+                <p class="text-muted">Análise da qualidade e distribuição dos dados recolhidos no estudo RM4Health</p>
             </div>
         </div>
 
@@ -126,135 +98,16 @@
                                 </div>
                             </div>
                         </div>
-                        
-                        <hr class="my-4">
-                        
-                        <div class="row">
-                            <div class="col-md-12">
-                                <h6 class="text-primary"><i class="bi bi-graph-up"></i> Destaques do Estudo:</h6>
-                                <div class="row">
-                                    <div class="col-md-6">
-                                        <ul class="list-unstyled">
-                                            <li class="mb-2">
-                                                <i class="bi bi-check-circle-fill text-success"></i>
-                                                <strong>População Alvo:</strong> Adultos idosos (65+ anos) em contexto comunitário
-                                            </li>
-                                            <li class="mb-2">
-                                                <i class="bi bi-check-circle-fill text-success"></i>
-                                                <strong>Tipo de Estudo:</strong> Observacional longitudinal com monitorização remota
-                                            </li>
-                                            <li class="mb-2">
-                                                <i class="bi bi-check-circle-fill text-success"></i>
-                                                <strong>Domínios Avaliados:</strong> Saúde física, mental, sono, adesão terapêutica e qualidade de vida
-                                            </li>
-                                        </ul>
-                                    </div>
-                                    <div class="col-md-6">
-                                        <ul class="list-unstyled">
-                                            <li class="mb-2">
-                                                <i class="bi bi-calendar-check text-info"></i>
-                                                <strong>Período de Recolha:</strong> Agosto 2025 - Em curso
-                                            </li>
-                                            <li class="mb-2">
-                                                <i class="bi bi-building text-info"></i>
-                                                <strong>Instituição:</strong> Faculdade de Medicina da Universidade do Porto
-                                            </li>
-                                            <li class="mb-2">
-                                                <i class="bi bi-shield-check text-info"></i>
-                                                <strong>Ética e Privacidade:</strong> Aprovado por comissão de ética, RGPD compliant
-                                            </li>
-                                        </ul>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
                     </div>
                 </div>
             </div>
         </div>
 
-        <!-- Insights Automáticos -->
-        {% if analytics.insights %}
-        <div class="row mb-4">
-            <div class="col-12">
-                <div class="card">
-                    <div class="card-header bg-success text-white">
-                        <h5 class="mb-0"><i class="bi bi-lightbulb"></i> Insights Automáticos</h5>
-                    </div>
-                    <div class="card-body">
-                        {% for insight in analytics.insights %}
-                        <div class="alert alert-info d-flex align-items-center mb-2">
-                            <i class="bi bi-info-circle me-2"></i>
-                            <span>{{ insight }}</span>
-                        </div>
-                        {% endfor %}
-                    </div>
-                </div>
-            </div>
-        </div>
-        {% endif %}
-
-        <!-- Navigation Cards -->
-        <div class="row mb-4">
-            <div class="col-md-3">
-                <div class="card h-100 border-primary">
-                    <div class="card-body text-center">
-                        <i class="bi bi-clipboard-data display-4 text-primary mb-3"></i>
-                        <h5 class="card-title">Instrumentos</h5>
-                        <p class="card-text">Análise por formulários e questionários</p>
-                        <a href="{{ url_for('instruments') }}" class="btn btn-primary">
-                            Ver Instrumentos <i class="bi bi-arrow-right"></i>
-                        </a>
-                    </div>
-                </div>
-            </div>
-            <div class="col-md-3">
-                <div class="card h-100 border-info">
-                    <div class="card-body text-center">
-                        <i class="bi bi-people display-4 text-info mb-3"></i>
-                        <h5 class="card-title">Grupos</h5>
-                        <p class="card-text">Comparação entre grupos de participantes</p>
-                        <a href="{{ url_for('groups') }}" class="btn btn-info">
-                            Ver Grupos <i class="bi bi-arrow-right"></i>
-                        </a>
-                    </div>
-                </div>
-            </div>
-            <div class="col-md-3">
-                <div class="card h-100 border-warning">
-                    <div class="card-body text-center">
-                        <i class="bi bi-pattern display-4 text-warning mb-3"></i>
-                        <h5 class="card-title">Padrões</h5>
-                        <p class="card-text">Identificação de padrões temporais</p>
-                        <a href="{{ url_for('patterns') }}" class="btn btn-warning">
-                            Ver Padrões <i class="bi bi-arrow-right"></i>
-                        </a>
-                    </div>
-                </div>
-            </div>
-            <div class="col-md-3">
-                <div class="card h-100 border-success">
-                    <div class="card-body text-center">
-                        <i class="bi bi-bar-chart display-4 text-success mb-3"></i>
-                        <h5 class="card-title">Completude</h5>
-                        <p class="card-text">Taxa de preenchimento dos campos</p>
-                        <a href="#completion-rates" class="btn btn-success">
-                            Ver Completude <i class="bi bi-arrow-down"></i>
-                        </a>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Resumo Geral -->
+        <!-- Análises Principais -->
         {% if analytics.by_instrument %}
         <div class="row mb-4">
             <div class="col-12">
-                <h3><i class="bi bi-bar-chart text-primary"></i> Resumo Estatístico dos Dados</h3>
-                <div class="alert alert-light border-start border-primary border-3 mb-3">
-                    <p class="mb-2"><strong>💡 Para leigos:</strong> Esta secção apresenta um resumo quantitativo de como os dados estão distribuídos pelos diferentes questionários e grupos de participantes.</p>
-                    <small class="text-muted">📊 <strong>Como interpretar:</strong> Valores mais altos indicam maior participação e envolvimento dos participantes nesses questionários ou grupos.</small>
-                </div>
+                <h4 class="mb-3"><i class="bi bi-bar-chart-fill text-primary"></i> Distribuição por Instrumento</h4>
             </div>
         </div>
         
@@ -262,103 +115,39 @@
             <div class="col-md-6">
                 <div class="card">
                     <div class="card-header bg-primary text-white">
-                        <h5 class="mb-0"><i class="bi bi-clipboard-data"></i> Análise por Instrumento</h5>
+                        <h5 class="mb-0"><i class="bi bi-clipboard-data"></i> Por Questionário</h5>
                     </div>
                     <div class="card-body">
-                        <!-- Explicação Metodológica -->
-                        <div class="alert alert-info mb-3">
-                            <h6><i class="bi bi-info-circle"></i> O que são Instrumentos de Avaliação?</h6>
-                            <p class="mb-2 small"><strong>Para leigos:</strong> Instrumentos são os diferentes questionários e formulários que os participantes preenchem. Cada um avalia aspetos específicos da saúde.</p>
-                            <h6 class="mt-2"><i class="bi bi-calculator"></i> Como calculamos estas métricas:</h6>
-                            <ol class="mb-0 small">
-                                <li><strong>Total de Registos:</strong> Contagem de quantas vezes cada questionário foi preenchido</li>
-                                <li><strong>Participantes Únicos:</strong> Quantas pessoas diferentes responderam a cada questionário</li>
-                                <li><strong>Taxa de Participação:</strong> (Participantes únicos ÷ 23 total) × 100</li>
-                                <li><strong>Classificação de Qualidade:</strong>
-                                    <ul>
-                                        <li>Excelente: ≥80% participação</li>
-                                        <li>Bom: 60-79% participação</li>
-                                        <li>Precisa atenção: <60% participação</li>
-                                    </ul>
-                                </li>
-                            </ol>
-                        </div>
-                        
-                        <p class="small text-muted mb-3">💡 <strong>Interpretação:</strong> Um instrumento com alta participação indica que os participantes consideram o questionário relevante e acessível.</p>
                         <div class="table-responsive">
-                            <table class="table table-striped">
+                            <table class="table table-sm">
                                 <thead>
                                     <tr>
                                         <th>Instrumento</th>
-                                        <th>
-                                            Registros
-                                            <small class="d-block fw-normal">Total preenchimentos</small>
-                                        </th>
-                                        <th>
-                                            Participantes
-                                            <small class="d-block fw-normal">Pessoas únicas</small>
-                                        </th>
-                                        <th>
-                                            Performance
-                                            <small class="d-block fw-normal">Avaliação</small>
-                                        </th>
+                                        <th>Registos</th>
+                                        <th>Participantes</th>
+                                        <th>Status</th>
                                     </tr>
                                 </thead>
                                 <tbody>
                                     {% for instrument_key, instrument_data in analytics.by_instrument.items() %}
                                     {% set participation_rate = (instrument_data.unique_participants / 23 * 100) if 23 > 0 else 0 %}
                                     <tr>
-                                        <td>
-                                            <strong>{{ instrument_data.name }}</strong>
-                                            <small class="d-block text-muted">
-                                                {% if 'barthel' in instrument_key.lower() %}
-                                                Independência funcional
-                                                {% elif 'eq5d' in instrument_key.lower() %}
-                                                Qualidade de vida
-                                                {% elif 'pittsburgh' in instrument_key.lower() or 'sono' in instrument_key.lower() %}
-                                                Qualidade do sono
-                                                {% elif 'caracterizacao' in instrument_key.lower() %}
-                                                Perfil socioeconómico
-                                                {% elif 'medicacao' in instrument_key.lower() %}
-                                                Adesão terapêutica
-                                                {% else %}
-                                                Dados clínicos
-                                                {% endif %}
-                                            </small>
-                                        </td>
-                                        <td><span class="badge bg-primary">{{ instrument_data.total_records }}</span></td>
-                                        <td><span class="badge bg-info">{{ instrument_data.unique_participants }}</span></td>
+                                        <td><strong>{{ instrument_data.name }}</strong></td>
+                                        <td>{{ instrument_data.total_records }}</td>
+                                        <td>{{ instrument_data.unique_participants }}</td>
                                         <td>
                                             {% if participation_rate >= 80 %}
-                                            <span class="badge bg-success">Excelente</span>
-                                            <small class="d-block text-success">{{ participation_rate|round(1) }}% participação</small>
+                                            <span class="badge bg-success">{{ participation_rate|round(0)|int }}%</span>
                                             {% elif participation_rate >= 60 %}
-                                            <span class="badge bg-warning">Bom</span>
-                                            <small class="d-block text-warning">{{ participation_rate|round(1) }}% participação</small>
+                                            <span class="badge bg-warning">{{ participation_rate|round(0)|int }}%</span>
                                             {% else %}
-                                            <span class="badge bg-danger">Precisa atenção</span>
-                                            <small class="d-block text-danger">{{ participation_rate|round(1) }}% participação</small>
+                                            <span class="badge bg-danger">{{ participation_rate|round(0)|int }}%</span>
                                             {% endif %}
                                         </td>
                                     </tr>
                                     {% endfor %}
                                 </tbody>
                             </table>
-                        </div>
-                        <div class="mt-3 p-3 bg-light rounded">
-                            <h6><i class="bi bi-info-circle text-primary"></i> Interpretação Científica:</h6>
-                            {% set total_records = analytics.by_instrument.values() | map(attribute='total_records') | sum %}
-                            {% set avg_participation = (analytics.by_instrument.values() | map(attribute='unique_participants') | sum) / analytics.by_instrument|length if analytics.by_instrument|length > 0 else 0 %}
-                            <ul class="mb-0 small">
-                                <li><strong>Total de preenchimentos:</strong> {{ total_records }} (indica volume de dados recolhidos)</li>
-                                <li><strong>Participação média:</strong> {{ avg_participation|round(1) }} participantes por instrumento</li>
-                                <li><strong>Instrumentos mais populares:</strong> 
-                                    {% set top_instruments = analytics.by_instrument.items() | sort(attribute='1.unique_participants', reverse=true) | list %}
-                                    {% for key, data in top_instruments[:3] %}
-                                        {{ data.name }}{% if not loop.last %}, {% endif %}
-                                    {% endfor %}
-                                </li>
-                            </ul>
                         </div>
                     </div>
                 </div>
@@ -367,15 +156,19 @@
             <div class="col-md-6">
                 <div class="card">
                     <div class="card-header bg-info text-white">
-                        <h5 class="mb-0"><i class="bi bi-people"></i> Análise por Grupo</h5>
+                        <h5 class="mb-0"><i class="bi bi-people"></i> Por Grupo</h5>
                     </div>
                     <div class="card-body">
-                        <!-- Explicação Metodológica -->
-                        <div class="alert alert-light border-info border-start border-3 mb-3">
-                            <h6><i class="bi bi-info-circle text-info"></i> O que significa Análise por Grupo?</h6>
-                            <p class="mb-2 small"><strong>Para leigos:</strong> Muitos estudos dividem participantes em grupos (ex: grupo controlo vs intervenção) para comparar resultados. Esta análise mostra como cada grupo está a participar.</p>
-                            <h6 class="mt-2"><i class="bi bi-calculator text-info"></i> Metodologia de Cálculo:</h6>
-                            <ol class="mb-2 small">
+                        <div class="table-responsive">
+                            <table class="table table-sm">
+                                <thead>
+                                    <tr>
+                                        <th>Grupo</th>
+                                        <th>Participantes</th>
+                                        <th>Registos</th>
+                                        <th>Média</th>
+                                    </tr>
+                                </thead>
                                 <li><strong>Participantes:</strong> Número de pessoas em cada grupo</li>
                                 <li><strong>Registos:</strong> Total de questionários preenchidos pelo grupo</li>
                                 <li><strong>Engajamento:</strong> Registos ÷ Participantes = média de respostas por pessoa</li>
