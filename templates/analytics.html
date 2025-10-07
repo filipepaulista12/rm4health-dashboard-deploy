@@ -169,91 +169,22 @@
                                         <th>Média</th>
                                     </tr>
                                 </thead>
-                                <li><strong>Participantes:</strong> Número de pessoas em cada grupo</li>
-                                <li><strong>Registos:</strong> Total de questionários preenchidos pelo grupo</li>
-                                <li><strong>Engajamento:</strong> Registos ÷ Participantes = média de respostas por pessoa</li>
-                                <li><strong>Classificação:</strong>
-                                    <ul>
-                                        <li>≥20 preench./pessoa = Alto engajamento 🟢</li>
-                                        <li>10-19 preench./pessoa = Médio engajamento 🟡</li>
-                                        <li><10 preench./pessoa = Baixo engajamento 🔴</li>
-                                    </ul>
-                                </li>
-                            </ol>
-                            <p class="mb-0 small"><strong>💡 Importância:</strong> Comparar grupos ajuda a identificar se algum grupo precisa de mais apoio ou se há viés nos dados.</p>
-                        </div>
-                        <div class="table-responsive">
-                            <table class="table table-striped">
-                                <thead>
-                                    <tr>
-                                        <th>Grupo</th>
-                                        <th>
-                                            Participantes
-                                            <small class="d-block fw-normal">Pessoas no grupo</small>
-                                        </th>
-                                        <th>
-                                            Registros
-                                            <small class="d-block fw-normal">Total respostas</small>
-                                        </th>
-                                        <th>
-                                            Engajamento
-                                            <small class="d-block fw-normal">Média por pessoa</small>
-                                        </th>
-                                    </tr>
-                                </thead>
                                 <tbody>
                                     {% for group_name, group_data in analytics.by_group.items() %}
                                     {% set avg_engagement = (group_data.total_records / group_data.total_participants) if group_data.total_participants > 0 else 0 %}
                                     <tr>
-                                        <td>
-                                            <strong>{{ group_name if group_name else "Não especificado" }}</strong>
-                                            <small class="d-block text-muted">
-                                                {% if 'control' in group_name.lower() or 'controlo' in group_name.lower() %}
-                                                Grupo de controlo
-                                                {% elif 'interven' in group_name.lower() %}
-                                                Grupo de intervenção
-                                                {% else %}
-                                                Classificação pendente
-                                                {% endif %}
-                                            </small>
-                                        </td>
-                                        <td><span class="badge bg-info">{{ group_data.total_participants }}</span></td>
-                                        <td><span class="badge bg-primary">{{ group_data.total_records }}</span></td>
+                                        <td><strong>{{ group_name if group_name else "Não especificado" }}</strong></td>
+                                        <td>{{ group_data.total_participants }}</td>
+                                        <td>{{ group_data.total_records }}</td>
                                         <td>
                                             <span class="badge bg-{% if avg_engagement >= 20 %}success{% elif avg_engagement >= 10 %}warning{% else %}danger{% endif %}">
                                                 {{ avg_engagement|round(1) }}
                                             </span>
-                                            <small class="d-block text-muted">preench./pessoa</small>
                                         </td>
                                     </tr>
                                     {% endfor %}
                                 </tbody>
                             </table>
-                        </div>
-                        <div class="mt-3 p-3 bg-light rounded">
-                            <h6><i class="bi bi-bar-chart text-info"></i> Análise Comparativa:</h6>
-                            {% set group_items = analytics.by_group.items() | list %}
-                            {% if group_items|length >= 2 %}
-                            {% set group1 = group_items[0] %}
-                            {% set group2 = group_items[1] %}
-                            {% set diff_participants = group1[1].total_participants - group2[1].total_participants %}
-                            {% set diff_records = group1[1].total_records - group2[1].total_records %}
-                            <ul class="mb-0 small">
-                                <li><strong>Diferença de participantes:</strong> {{ diff_participants|abs }} pessoas ({{ "mais" if diff_participants > 0 else "menos" }} em {{ group1[0] if diff_participants > 0 else group2[0] }})</li>
-                                <li><strong>Diferença de registros:</strong> {{ diff_records|abs }} preenchimentos</li>
-                                <li><strong>Balanceamento:</strong> 
-                                    {% if diff_participants|abs <= 2 %}
-                                    <span class="text-success">Grupos bem balanceados</span>
-                                    {% elif diff_participants|abs <= 5 %}
-                                    <span class="text-warning">Ligeiro desequilíbrio</span>
-                                    {% else %}
-                                    <span class="text-danger">Desequilíbrio significativo</span>
-                                    {% endif %}
-                                </li>
-                            </ul>
-                            {% else %}
-                            <p class="mb-0 small text-muted">Análise comparativa disponível com 2+ grupos.</p>
-                            {% endif %}
                         </div>
                     </div>
                 </div>
@@ -263,39 +194,19 @@
 
         <!-- Taxa de Completude -->
         {% if analytics.completion_rates %}
-        <div class="row mb-4" id="completion-rates">
+        <div class="row mb-4 mt-4" id="completion-rates">
             <div class="col-12">
-                <div class="card border-success">
-                    <div class="card-header bg-success text-white">
-                        <h5 class="mb-0"><i class="bi bi-bar-chart"></i> Análise de Completude das Variáveis</h5>
-                    </div>
-                    <div class="card-body">
-                        <div class="alert alert-light border-start border-success border-3 mb-4">
-                            <h6><i class="bi bi-info-circle text-success"></i> Como interpretar as Taxas de Completude:</h6>
-                            <div class="row">
-                                <div class="col-md-6">
-                                    <p class="mb-2"><strong>💡 Para leigos:</strong> A taxa de completude mostra a percentagem de participantes que responderam a cada pergunta específica dos questionários.</p>
-                                    <ul class="mb-2">
-                                        <li><strong style="color: #198754;">Verde (≥80%):</strong> Pergunta muito bem aceite</li>
-                                        <li><strong style="color: #ffc107;">Amarelo (50-79%):</strong> Pergunta moderadamente aceite</li>
-                                        <li><strong style="color: #dc3545;">Vermelho (<50%):</strong> Pergunta problemática</li>
-                                    </ul>
-                                </div>
-                                <div class="col-md-6">
-                                    <h6><i class="bi bi-target text-primary"></i> Metodologia de Cálculo:</h6>
-                                    <ol class="mb-0">
-                                        <li>Contar respostas válidas por campo</li>
-                                        <li>Dividir pelo total de participantes</li>
-                                        <li>Multiplicar por 100 para obter %</li>
-                                        <li>Classificar por faixas de qualidade</li>
-                                    </ol>
-                                </div>
-                            </div>
-                        </div>
+                <h4 class="mb-3"><i class="bi bi-check-circle-fill text-success"></i> Qualidade dos Dados (Completude)</h4>
+                <p class="text-muted small">Percentagem de respostas válidas por variável. Verde (≥80%), Amarelo (50-79%), Vermelho (<50%)</p>
+            </div>
+        </div>
+        
+        <div class="row mb-4">
+            <div class="col-12">
                         
                         {% for instrument, fields in analytics.completion_rates.items() %}
                         <div class="mb-4">
-                            <h6 class="mt-3 mb-3">
+                            <h6 class="mb-2">
                                 <i class="bi bi-clipboard-check text-primary"></i>
                                 <strong>{{ instrument }}</strong>
                                 {% set field_items = fields.items() | list %}
@@ -310,44 +221,15 @@
                                         {% set _ = problematic_fields.append(field) %}
                                     {% endif %}
                                 {% endfor %}
-                                <small class="ms-2">
-                                    <span class="badge bg-{% if avg_completion >= 80 %}success{% elif avg_completion >= 60 %}warning{% else %}danger{% endif %}">
-                                        Média: {{ avg_completion|round(1) }}%
-                                    </span>
-                                </small>
+                                <span class="badge bg-{% if avg_completion >= 80 %}success{% elif avg_completion >= 60 %}warning{% else %}danger{% endif %} ms-2">
+                                    {{ avg_completion|round(0)|int }}%
+                                </span>
+                                <small class="text-muted ms-2">{{ field_items|length }} campos | {{ excellent_fields|length }} ótimos | {{ problematic_fields|length }} problemáticos</small>
                             </h6>
                             
-                            <!-- Resumo do instrumento -->
-                            <div class="row mb-3">
-                                <div class="col-md-4">
-                                    <div class="card bg-light">
-                                        <div class="card-body text-center py-2">
-                                            <small class="text-muted">Total de Campos</small>
-                                            <h6 class="mb-0">{{ field_items|length }}</h6>
-                                        </div>
-                                    </div>
-                                </div>
-                                <div class="col-md-4">
-                                    <div class="card bg-light">
-                                        <div class="card-body text-center py-2">
-                                            <small class="text-muted">Campos Excelentes (≥80%)</small>
-                                            <h6 class="mb-0 text-success">{{ excellent_fields|length }}</h6>
-                                        </div>
-                                    </div>
-                                </div>
-                                <div class="col-md-4">
-                                    <div class="card bg-light">
-                                        <div class="card-body text-center py-2">
-                                            <small class="text-muted">Campos Problemáticos (<50%)</small>
-                                            <h6 class="mb-0 text-danger">{{ problematic_fields|length }}</h6>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                            
-                            <!-- Detalhes dos campos -->
+                            <!-- Detalhes dos campos (apenas top 5) -->
                             <div class="row">
-                                {% for field, data in field_items[:10] %}  <!-- Mostrar top 10 -->
+                                {% for field, data in field_items[:5] %}  <!-- Mostrar top 10 -->
                                 <div class="col-md-6 mb-3">
                                     <div class="card border-{% if data.percentage >= 80 %}success{% elif data.percentage >= 50 %}warning{% else %}danger{% endif %}">
                                         <div class="card-body py-2">
