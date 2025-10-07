@@ -507,6 +507,16 @@
                                 <strong>{{ instrument }}</strong>
                                 {% set field_items = fields.items() | list %}
                                 {% set avg_completion = (field_items | map(attribute='1.percentage') | sum) / field_items|length if field_items|length > 0 else 0 %}
+                                {% set excellent_fields = [] %}
+                                {% set problematic_fields = [] %}
+                                {% for field, data in field_items %}
+                                    {% if data.percentage >= 80 %}
+                                        {% set _ = excellent_fields.append(field) %}
+                                    {% endif %}
+                                    {% if data.percentage < 50 %}
+                                        {% set _ = problematic_fields.append(field) %}
+                                    {% endif %}
+                                {% endfor %}
                                 <small class="ms-2">
                                     <span class="badge bg-{% if avg_completion >= 80 %}success{% elif avg_completion >= 60 %}warning{% else %}danger{% endif %}">
                                         Média: {{ avg_completion|round(1) }}%
@@ -528,7 +538,7 @@
                                     <div class="card bg-light">
                                         <div class="card-body text-center py-2">
                                             <small class="text-muted">Campos Excelentes (≥80%)</small>
-                                            <h6 class="mb-0 text-success">{{ field_items | selectattr('1.percentage', '>=', 80) | list | length }}</h6>
+                                            <h6 class="mb-0 text-success">{{ excellent_fields|length }}</h6>
                                         </div>
                                     </div>
                                 </div>
@@ -536,7 +546,7 @@
                                     <div class="card bg-light">
                                         <div class="card-body text-center py-2">
                                             <small class="text-muted">Campos Problemáticos (<50%)</small>
-                                            <h6 class="mb-0 text-danger">{{ field_items | selectattr('1.percentage', '<', 50) | list | length }}</h6>
+                                            <h6 class="mb-0 text-danger">{{ problematic_fields|length }}</h6>
                                         </div>
                                     </div>
                                 </div>
@@ -641,20 +651,28 @@
                             <div class="row">
                                 <div class="col-md-8">
                                     {% set all_percentages = [] %}
+                                    {% set excellent_list = [] %}
+                                    {% set problematic_list = [] %}
                                     {% for instrument, fields in analytics.completion_rates.items() %}
                                         {% for field, data in fields.items() %}
                                             {% set _ = all_percentages.append(data.percentage) %}
+                                            {% if data.percentage >= 80 %}
+                                                {% set _ = excellent_list.append(data.percentage) %}
+                                            {% endif %}
+                                            {% if data.percentage < 50 %}
+                                                {% set _ = problematic_list.append(data.percentage) %}
+                                            {% endif %}
                                         {% endfor %}
                                     {% endfor %}
                                     {% set overall_avg = (all_percentages | sum) / all_percentages|length if all_percentages|length > 0 else 0 %}
-                                    {% set excellent_count = all_percentages | selectattr('>=', 80) | list | length %}
-                                    {% set problematic_count = all_percentages | selectattr('<', 50) | list | length %}
+                                    {% set excellent_count = excellent_list|length %}
+                                    {% set problematic_count = problematic_list|length %}
                                     
                                     <p class="mb-2"><strong>💎 Qualidade Geral dos Dados: {{ overall_avg|round(1) }}%</strong></p>
                                     <ul class="mb-0">
                                         <li>📊 Total de variáveis analisadas: {{ all_percentages|length }}</li>
-                                        <li>✅ Variáveis com excelente completude (≥80%): {{ excellent_count }} ({{ (excellent_count/all_percentages|length*100)|round(1) }}%)</li>
-                                        <li>⚠️ Variáveis problemáticas (<50%): {{ problematic_count }} ({{ (problematic_count/all_percentages|length*100)|round(1) }}%)</li>
+                                        <li>✅ Variáveis com excelente completude (≥80%): {{ excellent_count }} ({{ (excellent_count/all_percentages|length*100)|round(1) if all_percentages|length > 0 else 0 }}%)</li>
+                                        <li>⚠️ Variáveis problemáticas (<50%): {{ problematic_count }} ({{ (problematic_count/all_percentages|length*100)|round(1) if all_percentages|length > 0 else 0 }}%)</li>
                                     </ul>
                                 </div>
                                 <div class="col-md-4">
