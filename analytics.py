@@ -54,6 +54,15 @@ class RM4HealthAnalytics:
     
     def analyze_by_group(self):
         """Análise por grupos de participantes"""
+        # Primeiro, criar mapeamento participant_code -> group a partir dos registros baseline
+        participant_to_group = {}
+        for record in self.records:
+            if not record.get('redcap_repeat_instrument'):  # É baseline
+                participant = record.get('participant_code')
+                group = record.get('participant_group')
+                if participant and group:
+                    participant_to_group[participant] = group
+        
         groups = defaultdict(lambda: {
             'participants': set(),
             'total_records': 0,
@@ -62,8 +71,9 @@ class RM4HealthAnalytics:
         })
         
         for record in self.records:
-            group = record.get('participant_group', 'Não especificado')
             participant = record.get('participant_code')
+            # Usar o mapeamento para obter o grupo correto
+            group = participant_to_group.get(participant, 'Não especificado')
             instrument = record.get('redcap_repeat_instrument', 'baseline')
             
             if not instrument:
