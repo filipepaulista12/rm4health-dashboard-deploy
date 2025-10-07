@@ -19,13 +19,13 @@ app.config['SECRET_KEY'] = 'rm4health_dashboard_secret_key'
 
 # Inicializar cliente REDCap (local ou API)
 if Config.USE_LOCAL_DATA:
-    print("🔄 Inicializando cliente LOCAL...")
+    print("[INFO] Inicializando cliente LOCAL...")
     redcap = LocalREDCapClient()
-    print("✅ Cliente local inicializado")
+    print("[OK] Cliente local inicializado")
 else:
-    print("🔄 Inicializando cliente API...")
+    print("[INFO] Inicializando cliente API...")
     redcap = REDCapClient()
-    print("✅ Cliente API inicializado")
+    print("[OK] Cliente API inicializado")
 
 # Cache para dados (simples cache em memória)
 cached_data = {
@@ -43,7 +43,7 @@ def get_cached_data():
         cached_data['last_update'] is None or 
         (now - cached_data['last_update']).seconds > cached_data['cache_duration']):
         
-        print("🔄 Atualizando cache de dados...")
+        print("[INFO] Atualizando cache de dados...")
         # IMPORTANTE: Usar 'raw' para ter acesso aos campos originais como participant_group
         data = redcap.get_records(raw_or_label='raw')
         cached_data['data'] = data
@@ -55,7 +55,7 @@ def get_cached_data():
 def dashboard():
     """Dashboard principal"""
     try:
-        print("🏠 Carregando dashboard principal...")
+        print("[INFO] Carregando dashboard principal...")
         
         # Buscar dados
         data = get_cached_data()
@@ -63,7 +63,7 @@ def dashboard():
         
         # Estatísticas básicas
         stats = processor.get_basic_stats()
-        print(f"📊 Stats retornados: grupos A={stats.get('total_grupo_a')}, B={stats.get('total_grupo_b')}, C={stats.get('total_grupo_c')}, D={stats.get('total_grupo_d')}")
+        print(f"[STATS] Grupos A={stats.get('total_grupo_a')}, B={stats.get('total_grupo_b')}, C={stats.get('total_grupo_c')}, D={stats.get('total_grupo_d')}")
         stats.update({
             'project_name': Config.PROJECT_NAME,
             'project_title': Config.PROJECT_TITLE,
@@ -80,7 +80,7 @@ def dashboard():
                              success=bool(data))
     
     except Exception as e:
-        print(f"❌ Erro no dashboard: {e}")
+        print(f"[ERROR] Erro no dashboard: {e}")
         traceback.print_exc()
         return render_template('dashboard.html', 
                              stats={'error': str(e)},
@@ -1220,16 +1220,18 @@ def quality_domains_overview():
                              error_message=f'Erro ao carregar visão geral: {str(e)}')
 
 if __name__ == '__main__':
-    print("🏥 Iniciando RM4Health Dashboard...")
-    print(f"🔗 URL da API: {Config.REDCAP_URL}")
-    print(f"🎯 Token: {Config.REDCAP_TOKEN[:10]}...")
-    print("🚀 Testando conexão...")
+    print("[INFO] Iniciando RM4Health Dashboard...")
+    print(f"[INFO] URL da API: {Config.REDCAP_URL}")
+    print(f"[INFO] Token: {Config.REDCAP_TOKEN[:10]}...")
+    print("[INFO] Testando conexao...")
     
     # Teste inicial
     if redcap.test_connection():
-        print("✅ Conexão OK! Iniciando servidor...")
+        print("[OK] Conexao OK! Iniciando servidor...")
+        print("[INFO] Acesse: http://127.0.0.1:5000")
         app.run(debug=False, host='0.0.0.0', port=5000)
     else:
-        print("❌ Falha na conexão! Verifique as credenciais.")
-        print("🔄 Iniciando servidor mesmo assim...")
+        print("[ERROR] Falha na conexao! Verifique as credenciais.")
+        print("[INFO] Iniciando servidor mesmo assim...")
+        print("[INFO] Acesse: http://127.0.0.1:5000")
         app.run(debug=False, host='0.0.0.0', port=5000)

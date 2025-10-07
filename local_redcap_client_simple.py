@@ -17,8 +17,8 @@ class LocalREDCapClientSimple:
     def load_config(self):
         """Carrega configuração dos arquivos de dados"""
         if not os.path.exists(self.config_file):
-            print(f"⚠️ Arquivo de configuração não encontrado: {self.config_file}")
-            print("📝 Criando configuração padrão...")
+            print(f"[WARNING] Arquivo de configuracao nao encontrado: {self.config_file}")
+            print("[INFO] Criando configuracao padrao...")
             self.create_default_config()
             return
         
@@ -27,14 +27,14 @@ class LocalREDCapClientSimple:
     
     def load_data(self):
         """Carrega todos os dados em memória"""
-        print("📂 Carregando dados locais...")
+        print("[INFO] Carregando dados locais...")
         
         # Carregar JSON completo
         json_file = self.config['files']['json_file']
         
         if not os.path.exists(json_file):
-            print(f"⚠️ Arquivo de dados não encontrado: {json_file}")
-            print("📝 Usando dados padrão...")
+            print(f"[WARNING] Arquivo de dados nao encontrado: {json_file}")
+            print("[INFO] Usando dados padrao...")
             # Se não existe, usar dados já criados no create_default_config
             if hasattr(self, 'full_data'):
                 return
@@ -50,10 +50,10 @@ class LocalREDCapClientSimple:
         try:
             with open(json_file, 'r', encoding='utf-8') as f:
                 self.full_data = json.load(f)
-            print(f"✅ Dados carregados: {len(self.full_data.get('data_raw', []))} registros")
+            print(f"[OK] Dados carregados: {len(self.full_data.get('data_raw', []))} registros")
         except Exception as e:
-            print(f"❌ Erro ao carregar dados: {e}")
-            print("📝 Usando dados de emergência...")
+            print(f"[ERROR] Erro ao carregar dados: {e}")
+            print("[INFO] Usando dados de emergencia...")
             self.full_data = {
                 "data_raw": [],
                 "data_labeled": [],
@@ -66,14 +66,14 @@ class LocalREDCapClientSimple:
     
     def get_records(self, raw_or_label='label', **kwargs):
         """Retorna registros (simulando a API)"""
-        print(f"🔌 Conectando à base local...")
+        print(f"[INFO] Conectando a base local...")
         
         if raw_or_label == 'raw':
             data = self.full_data.get('data_raw', [])
         else:
             data = self.full_data.get('data_labeled', [])
         
-        print(f"✅ Base local conectada! {len(data)} registros encontrados")
+        print(f"[OK] Base local conectada! {len(data)} registros encontrados")
         return data
     
     def get_metadata(self):
