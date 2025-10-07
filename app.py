@@ -51,7 +51,8 @@ def get_cached_data():
         (now - cached_data['last_update']).seconds > cached_data['cache_duration']):
         
         print("🔄 Atualizando cache de dados...")
-        data = redcap.get_records()
+        # IMPORTANTE: Usar 'raw' para ter acesso aos campos originais como participant_group
+        data = redcap.get_records(raw_or_label='raw')
         cached_data['data'] = data
         cached_data['last_update'] = now
         
@@ -69,6 +70,7 @@ def dashboard():
         
         # Estatísticas básicas
         stats = processor.get_basic_stats()
+        print(f"📊 Stats retornados: grupos A={stats.get('total_grupo_a')}, B={stats.get('total_grupo_b')}, C={stats.get('total_grupo_c')}, D={stats.get('total_grupo_d')}")
         stats.update({
             'project_name': Config.PROJECT_NAME,
             'project_title': Config.PROJECT_TITLE,
