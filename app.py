@@ -9,15 +9,8 @@ from datetime import datetime
 import os
 
 # Import do cliente local baseado no ambiente
-if os.getenv('RENDER') or os.getenv('PRODUCTION'):
-    # Em produção, usar versão simples sem pandas
-    from local_redcap_client_simple import LocalREDCapClientSimple as LocalREDCapClient
-else:
-    # Em desenvolvimento, usar versão completa
-    try:
-        from local_redcap_client import LocalREDCapClient
-    except ImportError:
-        from local_redcap_client_simple import LocalREDCapClientSimple as LocalREDCapClient
+# FORÇAR uso da versão simples (sem pandas) para evitar problemas de lentidão
+from local_redcap_client_simple import LocalREDCapClientSimple as LocalREDCapClient
 
 from data_processor import DataProcessor
 
@@ -1235,8 +1228,8 @@ if __name__ == '__main__':
     # Teste inicial
     if redcap.test_connection():
         print("✅ Conexão OK! Iniciando servidor...")
-        app.run(debug=True, host='0.0.0.0', port=5000)
+        app.run(debug=False, host='0.0.0.0', port=5000)
     else:
         print("❌ Falha na conexão! Verifique as credenciais.")
         print("🔄 Iniciando servidor mesmo assim...")
-        app.run(debug=True, host='0.0.0.0', port=5000)
+        app.run(debug=False, host='0.0.0.0', port=5000)
