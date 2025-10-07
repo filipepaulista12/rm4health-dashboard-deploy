@@ -24,11 +24,20 @@ class DataProcessor:
                 'total_grupo_d': 0
             }
         
-        # Conta participantes únicos baseado em participant_code (campo correto do RM4Health)
+        # Mapear participant_code -> group a partir do baseline
+        participant_to_group = {}
+        for record in self.data:
+            if not record.get('redcap_repeat_instrument'):  # É baseline
+                participant = record.get('participant_code')
+                group = record.get('participant_group')
+                if participant and group:
+                    participant_to_group[participant] = group
+        
+        # Conta participantes únicos baseado em participant_code
         unique_participants = set()
         all_fields = set()
         
-        # Contadores por grupo
+        # Contadores por grupo usando o mapeamento
         grupo_a_participants = set()
         grupo_b_participants = set()
         grupo_c_participants = set()
@@ -45,24 +54,30 @@ class DataProcessor:
             if participant_id:
                 unique_participants.add(participant_id)
                 
-                # Classificar por grupos baseado no participant_group
-                group = record.get('participant_group', '')
-                if 'Grupo A' in str(group) or group == 'Grupo A':
+                # Usar mapeamento para obter grupo correto
+                group = participant_to_group.get(participant_id, '').lower()
+                if group == 'a':
                     grupo_a_participants.add(participant_id)
-                elif 'Grupo B' in str(group) or group == 'Grupo B':
+                elif group == 'b':
                     grupo_b_participants.add(participant_id)
-                elif 'Grupo C' in str(group) or group == 'Grupo C':
+                elif group == 'c':
                     grupo_c_participants.add(participant_id)
-                elif 'Grupo D' in str(group) or group == 'Grupo D':
+                elif group == 'd':
                     grupo_d_participants.add(participant_id)
             
             all_fields.update(record.keys())
         
-        # Estatísticas básicas sem completude (que é problemática devido a campos condicionais)
+        # Estatísticas básicas
         total_fields = len(all_fields)
         
-        # RM4Health tem 11 formulários conhecidos (0-10 em algarismo romano)
-        total_instruments = 11
+        # Contar instrumentos únicos reais
+        instruments = set()
+        for record in self.data:
+            inst = record.get('redcap_repeat_instrument', 'baseline')
+            if inst:
+                instruments.add(inst)
+            else:
+                instruments.add('baseline')
         
         stats = {
             'total_participants': len(unique_participants),
@@ -72,7 +87,7 @@ class DataProcessor:
             'total_grupo_b': len(grupo_b_participants), 
             'total_grupo_c': len(grupo_c_participants),
             'total_grupo_d': len(grupo_d_participants),
-            'total_instruments': total_instruments,
+            'total_instruments': len(instruments),
             'total_raw_records': len(self.data)
         }
         
