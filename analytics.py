@@ -253,11 +253,21 @@ class RM4HealthAnalytics:
     
     def _analyze_group_differences(self):
         """Diferenças entre grupos"""
+        # Mapear participant_code -> group a partir do baseline
+        participant_to_group = {}
+        for record in self.records:
+            if not record.get('redcap_repeat_instrument'):  # É baseline
+                participant = record.get('participant_code')
+                group = record.get('participant_group')
+                if participant and group:
+                    participant_to_group[participant] = group
+        
         differences = {}
         
         groups = defaultdict(list)
         for record in self.records:
-            group = record.get('participant_group', 'Não especificado')
+            participant = record.get('participant_code')
+            group = participant_to_group.get(participant, 'Não especificado')
             groups[group].append(record)
         
         # Comparar grupos
